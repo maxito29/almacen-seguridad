@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Dashboard', ~{::section})}">
+<body>
+<section>
+
+    <!-- Tarjetas de estadisticas para el dashboard-->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-stat p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded p-2 bg-warning bg-opacity-25 text-warning fs-4">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Productos</div>
+                        <div class="fw-bold fs-4" th:text="${totalProductos}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded p-2 bg-success bg-opacity-25 text-success fs-4">
+                        <i class="bi bi-arrow-down-circle"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Ingresos</div>
+                        <div class="fw-bold fs-4" th:text="${totalIngresos}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded p-2 bg-danger bg-opacity-25 text-danger fs-4">
+                        <i class="bi bi-arrow-up-circle"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Salidas</div>
+                        <div class="fw-bold fs-4" th:text="${totalSalidas}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stat p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded p-2 bg-info bg-opacity-25 text-info fs-4">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Trabajadores</div>
+                        <div class="fw-bold fs-4" th:text="${totalTrabajadores}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas para sedes -->
+    <h6 class="fw-bold mb-3"><i class="bi bi-building me-2"></i>Sedes</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4" th:each="s : ${sedes}">
+            <div class="card card-stat p-3"
+                 style="border-left: 4px solid #f0a500;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="fw-bold mb-0" th:text="${s.nombre}"></h6>
+                        <small class="text-muted" th:text="${s.direccion}"></small>
+                    </div>
+                    <span class="badge bg-dark" th:text="${s.codigo}"></span>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="/productos" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-box-seam me-1"></i>Ver Productos
+                    </a>
+                    <a href="/kardex" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-journal-text me-1"></i>Kardex
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock de tabla -->
+    <h6 class="fw-bold mb-3">
+        <i class="bi bi-clipboard-data me-2"></i>Stock Actual
+    </h6>
+    <div class="card card-stat p-3">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background-color:#1a1a2e; color:white;">
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Tipo</th>
+                        <th>Costo Unit.</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${productos}"
+                        th:classappend="${p.stockTotal == 0} ? 'table-danger' :
+                                        (${p.stockTotal <= 3} ? 'table-warning' : '')">
+                        <td th:text="${p.idProducto}"></td>
+                        <td th:text="${p.descripcion}"></td>
+                        <td><span class="badge bg-secondary"
+                                  th:text="${p.tipo.nombre}"></span></td>
+                        <td th:text="${'S/ ' + p.costoUnitario}"></td>
+                        <td class="fw-bold"
+                            th:classappend="${p.stockTotal == 0} ? 'text-danger' : 'text-success'"
+                            th:text="${p.stockTotal}"></td>
+                        <td>
+                            <span th:if="${p.stockTotal > 3}"
+                                  class="badge bg-success">Con Stock</span>
+                            <span th:if="${p.stockTotal > 0 && p.stockTotal <= 3}"
+                                  class="badge bg-warning text-dark">Stock Bajo</span>
+                            <span th:if="${p.stockTotal == 0}"
+                                  class="badge bg-danger">Sin Stock</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

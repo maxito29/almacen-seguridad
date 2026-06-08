@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Ingresos', ~{::section})}">
+<body>
+<section>
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-arrow-down-circle text-success me-2"></i>Ingresos
+            </h4>
+            <small class="text-muted">Registro de entrada de productos al almacén</small>
+        </div>
+        <button class="btn btn-success btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#modalIngreso"
+                onclick="limpiarModalIngreso()">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Ingreso
+        </button>
+    </div>
+
+    <!-- Filtro -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscador" class="form-control"
+                               placeholder="Buscar por producto, proveedor, sede..."
+                               onkeyup="filtrarTabla()"/>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroEstado" class="form-select form-select-sm"
+                           onchange="filtrarDesdeSelect(this.value)">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="suspendido">Suspendido</option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <small class="text-muted">
+                        Página <strong th:text="${paginaActual + 1}"></strong>
+                        de <strong th:text="${totalPaginas}"></strong>
+                        — Total:
+                        <strong th:text="${paginado.totalElements}"></strong> registros
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card card-stat">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tablaIngresos">
+					<thead class="table-header">
+					    <tr>
+					        <th style="width:35px">#</th>
+					        <th>Producto</th>
+					        <th class="d-none d-xl-table-cell">Proveedor</th>
+					        <th>Sede</th>
+					        <th style="width:75px">Cant.</th>
+					        <th class="d-none d-lg-table-cell" style="width:80px">Costo</th>
+					        <th style="width:90px">Total</th>
+					        <th class="d-none d-xl-table-cell" style="width:100px">Factura</th>
+					        <th style="width:90px">Fecha</th>
+					        <th style="width:85px">Estado</th>
+					        <th style="width:75px">Acc.</th>
+					    </tr>
+					</thead>
+                    <tbody>
+                        <tr th:each="i : ${ingresos}"
+                            th:classappend="${i.estado == 2} ? 'table-secondary' : ''">
+                            <td th:text="${i.idIngreso}"></td>
+                            <td>
+                                <span class="fw-semibold"
+                                      th:text="${i.producto.descripcion}"></span>
+                                <br/>
+                                <small class="text-muted"
+                                       th:text="${i.producto.idProducto}"></small>
+                            </td>
+                            <td th:text="${i.proveedor != null ?
+                                          i.proveedor.nombre : '-'}"></td>
+                            <td>
+                                <span class="badge bg-dark"
+                                      th:text="${i.sede.nombre}"></span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success"
+                                      th:text="${i.cantidad}"></span>
+                            </td>
+                            <td th:text="${'S/ ' + i.costoUnitario}"></td>
+                            <td class="fw-semibold text-success"
+                                th:text="${'S/ ' + i.total}"></td>
+                            <td th:text="${i.nroFactura}"></td>
+                            <td th:text="${#dates.format(i.fecha,'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:if="${i.estado == 1}"
+                                      class="badge bg-success">Activo</span>
+                                <span th:if="${i.estado == 2}"
+                                      class="badge bg-secondary">Suspendido</span>
+                            </td>
+                            <td>
+								<div class="acciones-btn">
+                                <button class="btn btn-warning btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalIngreso"
+                                        th:data-id="${i.idIngreso}"
+                                        th:data-producto="${i.producto.idProducto}"
+                                        th:data-proveedor="${i.proveedor != null ?
+                                                            i.proveedor.idProveedor : 0}"
+                                        th:data-sede="${i.sede.idSede}"
+                                        th:data-cantidad="${i.cantidad}"
+                                        th:data-costo="${i.costoUnitario}"
+                                        th:data-factura="${i.nroFactura}"
+										th:data-estado="${i.estado}"
+                                        onclick="editarIngreso(this)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+								<a href="javascript:void(0)"
+								   th:data-url="@{/ingresos/estado/{id}(id=${i.idIngreso})}"
+								   th:data-estado="${i.estado}"
+								   th:class="${i.estado == 1} ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm'"
+								   th:title="${i.estado == 1} ? 'Suspender' : 'Activar'"
+								   onclick="confirmarEstado(this.dataset.url, this.dataset.estado)">
+								    <i th:class="${i.estado == 1} ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
+								</a>
+								</div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(ingresos)}">
+                            <td colspan="11" class="text-center text-muted py-4">
+                                No hay ingresos registrados
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+		<!-- Paginacion -->
+		<div class="card-footer d-flex justify-content-between align-items-center">
+		    <small class="text-muted">
+		        Mostrando <strong th:text="${ingresos.size()}"></strong>
+		        de <strong th:text="${paginado.totalElements}"></strong> registros
+		    </small>
+		    <nav>
+		        <ul class="pagination pagination-sm mb-0">
+		            <li class="page-item"
+		                th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+		                <a class="page-link" href="javascript:void(0)"
+		                   th:onclick="${paginaActual > 0} ? 'irPagina(' + ${paginaActual - 1} + ')' : ''">
+		                    <i class="bi bi-chevron-left"></i>
+		                </a>
+		            </li>
+		            <li class="page-item"
+		                th:each="i : ${#numbers.sequence(0, totalPaginas - 1)}"
+		                th:classappend="${i == paginaActual} ? 'active' : ''">
+		                <a class="page-link" href="javascript:void(0)"
+		                   th:onclick="'irPagina(' + ${i} + ')'">
+		                    <span th:text="${i + 1}"></span>
+		                </a>
+		            </li>
+		            <li class="page-item"
+		                th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+		                <a class="page-link" href="javascript:void(0)"
+		                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPagina(' + ${paginaActual + 1} + ')' : ''">
+		                    <i class="bi bi-chevron-right"></i>
+		                </a>
+		            </li>
+		        </ul>
+		    </nav>
+		</div>
+    </div>
+
+    <!-- Modal para registrar -->
+    <div class="modal fade" id="modalIngreso" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title" id="tituloModal">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Nuevo Ingreso
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formIngreso" onsubmit="guardarIngreso(event)" >
+                    <input type="hidden" name="idIngreso" id="idIngreso"/>
+					<input type="hidden" name="estado" id="inputEstado"/>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Producto</label>
+                                <select class="form-select"
+                                        name="producto.idProducto"
+                                        id="selectProducto" required>
+                                    <option value="">-- Seleccione --</option>
+                                    <option th:each="p : ${productos}"
+                                            th:value="${p.idProducto}"
+                                            th:text="${p.idProducto + ' — ' +
+                                                      p.descripcion}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Proveedor</label>
+                                <select class="form-select"
+                                        name="proveedor.idProveedor"
+                                        id="selectProveedor">
+                                    <option value="">-- Seleccione --</option>
+                                    <option th:each="pv : ${proveedores}"
+                                            th:value="${pv.idProveedor}"
+                                            th:text="${pv.nombre}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Sede</label>
+                                <select class="form-select"
+                                        name="sede.idSede"
+                                        id="selectSede" required>
+                                    <option value="">-- Seleccione --</option>
+                                    <option th:each="s : ${sedes}"
+                                            th:value="${s.idSede}"
+                                            th:text="${s.nombre}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Cantidad</label>
+                                <input type="number" class="form-control"
+                                       name="cantidad" id="inputCantidad"
+                                       min="1" required/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Costo Unitario</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">S/</span>
+                                    <input type="number" step="0.01"
+                                           class="form-control"
+                                           name="costoUnitario"
+                                           id="inputCosto" required/>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">N° Factura</label>
+                                <input type="text" class="form-control"
+                                       name="nroFactura" id="inputFactura"
+                                       placeholder="Ej: E001-186"/>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Observación</label>
+                                <textarea class="form-control"
+                                          name="observacion"
+                                          id="inputObservacion" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

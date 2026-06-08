@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(titulo, contenido)">
+<head>
+	
+	<script>
+	    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+	        document.documentElement.classList.add('sidebar-pre-collapsed');
+	    }
+	</script>
+    <title th:text="${titulo}">Sistema Almacén</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"/>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+</head>
+<body>
+<div class="d-flex">
+	<div class="sidebar d-flex flex-column " id="sidebar">
+		<div class="sidebar-brand-wrapper d-flex align-items-center 
+		            justify-content-between mt-2 ps-1">
+		    <a href="/" class="nav-link brand-link"
+		       onclick="navegarAjax('/', true); return false;">
+		        <i class="bi bi-shield-fill-check" 
+		           style="font-size:1.1rem; color:#f0a500"></i>
+		        <span class="brand-text nav-text">Almacén Central</span>
+		    </a>
+		</div>
+
+		<ul class="nav flex-column gap-1">
+		    <li class="nav-item">
+		        <a href="/" class="nav-link"
+		           data-tooltip="Dashboard"
+		           onclick="navegarAjax('/', true); return false;"
+		           th:classappend="${paginaActiva == 'dashboard'} ? 'active' : ''">
+		            <i class="bi bi-speedometer2"></i>
+		            <span class="nav-text">Dashboard</span>
+		        </a>
+		    </li>
+		    <li class="nav-item">
+		        <a href="/productos" class="nav-link"
+		           data-tooltip="Productos"
+		           onclick="navegarAjax('/productos', true); return false;"
+		           th:classappend="${paginaActiva == 'productos'} ? 'active' : ''">
+		            <i class="bi bi-box-seam"></i>
+		            <span class="nav-text">Productos</span>
+		        </a>
+		    </li>
+		    <li class="nav-item">
+		        <a href="/ingresos" class="nav-link"
+		           data-tooltip="Ingresos"
+		           onclick="navegarAjax('/ingresos', true); return false;"
+		           th:classappend="${paginaActiva == 'ingresos'} ? 'active' : ''">
+		            <i class="bi bi-arrow-down-circle"></i>
+		            <span class="nav-text">Ingresos</span>
+		        </a>
+		    </li>
+		    <li class="nav-item">
+		        <a href="/salidas" class="nav-link"
+		           data-tooltip="Salidas"
+		           onclick="navegarAjax('/salidas', true); return false;"
+		           th:classappend="${paginaActiva == 'salidas'} ? 'active' : ''">
+		            <i class="bi bi-arrow-up-circle"></i>
+		            <span class="nav-text">Salidas</span>
+		        </a>
+		    </li>
+		    <li class="nav-item">
+		        <a href="/trabajadores" class="nav-link"
+		           data-tooltip="Trabajadores"
+		           onclick="navegarAjax('/trabajadores', true); return false;"
+		           th:classappend="${paginaActiva == 'trabajadores'} ? 'active' : ''">
+		            <i class="bi bi-people"></i>
+		            <span class="nav-text">Trabajadores</span>
+		        </a>
+		    </li>
+		    <li class="nav-item">
+		        <a href="/kardex" class="nav-link"
+		           data-tooltip="Kardex"
+		           onclick="navegarAjax('/kardex', true); return false;"
+		           th:classappend="${paginaActiva == 'kardex'} ? 'active' : ''">
+		            <i class="bi bi-journal-text"></i>
+		            <span class="nav-text">Kardex</span>
+		        </a>
+		    </li>
+		</ul>
+		
+		<div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 8px 0;"></div>
+		<div class="d-flex justify-content-center py-2">
+		    <button onclick="toggleSidebar()" id="btnToggleBottom"
+		            style="background:rgba(255,255,255,0.15); border:none; color:#fff;
+		                   cursor:pointer; border-radius:50%; width:32px; height:32px;
+		                   display:flex; align-items:center; justify-content:center;">
+		        <i class="bi bi-chevron-left fs-5" id="iconToggleBottom"></i>
+		    </button>
+		</div>
+
+	    <div class="mt-auto ps-1 pb-2">
+	        <small class="text-secondary nav-text">v1.0 — 2026</small>
+	    </div>
+	</div>
+
+	<!-- Contenido principalL -->
+	<div class="main-content" id="mainContent">
+
+        <!-- Barra  -->
+        <div class="topbar d-flex align-items-center px-4 py-3">
+            <h5 class="mb-0 fw-bold" th:text="${titulo}">Dashboard</h5>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <span class="text-muted small">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    <span th:text="${#dates.format(#dates.createNow(),'dd/MM/yyyy')}"></span>
+                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-warning d-flex align-items-center
+                                justify-content-center text-white fw-bold"
+                         style="width:36px;height:36px">A</div>
+                    <span class="fw-semibold">Admin</span>
+                </div>
+            </div>
+        </div>
+
+		<!-- Contenido de la pagina -->
+		<div class="contenido-pagina" id="contenidoPrincipal">
+		    <div th:insert="${contenido}"></div>
+		</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/scripts.js}"></script>
+</body>
+</html>
