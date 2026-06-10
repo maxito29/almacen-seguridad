@@ -601,3 +601,254 @@ function actualizarBotonesPaginacion(paginaActual, totalPaginas) {
 
     nav.innerHTML = html;
 }
+
+//DASHBOARD 
+
+function irPaginaDashboard(pagina) {
+    navegarAjax('/?page=' + pagina, true);
+}
+
+//PRODUCTOS JS
+
+function filtrarTablaProductos() {
+    const texto  = document.getElementById('buscador').value;
+    const estado = document.getElementById('filtroEstado').value;
+    filtrarProductosServidor(estado, 0, texto);
+}
+
+function filtrarDesdeSelectProductos(estado) {
+    const texto = document.getElementById('buscador').value;
+    filtrarProductosServidor(estado, 0, texto);
+}
+
+function filtrarProductosServidor(estado, pagina, buscar = '') {
+    fetch(`/productos/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('#tablaProductos tbody');
+        tbody.innerHTML = '';
+
+        if (!data.productos || data.productos.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    No hay productos registrados
+                </td></tr>`;
+            actualizarPaginacionProductos(pagina, 0, 0, 0);
+            return;
+        }
+
+        const offset = pagina * 10;
+        data.productos.forEach((p, idx) => {
+            const estadoBadge = p.estado === 1
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-secondary">Suspendido</span>';
+
+            const btnEstado = p.estado === 1
+                ? `<a href="javascript:void(0)"
+                      data-url="/productos/estado/${p.idProducto}"
+                      data-estado="${p.estado}"
+                      class="btn btn-danger btn-sm"
+                      onclick="confirmarEstadoProducto(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-pause-circle"></i></a>`
+                : `<a href="javascript:void(0)"
+                      data-url="/productos/estado/${p.idProducto}"
+                      data-estado="${p.estado}"
+                      class="btn btn-success btn-sm"
+                      onclick="confirmarEstadoProducto(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-play-circle"></i></a>`;
+            let stockClass = 'badge bg-success';
+            if (p.stockTotal === 0)      stockClass = 'badge bg-danger';
+            else if (p.stockTotal < 10)  stockClass = 'badge bg-warning text-dark';
+
+            const tipo = p.tipo ? p.tipo.nombre : '-';
+            const ean  = p.eanInt || '-';
+
+            tbody.innerHTML += `
+            <tr class="${p.estado === 2 ? 'table-secondary' : ''}">
+                <td><span class="fw-semibold text-primary">${p.idProducto}</span></td>
+                <td>${p.descripcion}</td>
+                <td><span class="badge bg-secondary">${tipo}</span></td>
+                <td class="d-none d-lg-table-cell text-muted">${ean}</td>
+                <td>S/ ${p.costoUnitario ?? '0.00'}</td>
+                <td class="d-none d-lg-table-cell">S/ ${p.precioVenta ?? '0.00'}</td>
+                <td><span class="${stockClass}">${p.stockTotal}</span></td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <div class="acciones-btn">
+                        <button class="btn btn-warning btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalProducto"
+                            data-id="${p.idProducto}"
+                            data-ean="${ean}"
+                            data-descripcion="${p.descripcion}"
+                            data-tipo="${p.tipo ? p.tipo.idTipo : ''}"
+                            data-costo="${p.costoUnitario ?? ''}"
+                            data-venta="${p.precioVenta ?? ''}"
+                            data-stock="${p.stockTotal}"
+                            data-estado="${p.estado}"
+                            onclick="editarProducto(this)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${btnEstado}
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        actualizarPaginacionProductos(pagina, data.totalPages,
+            data.totalElements, data.productos.length);
+        actualizarBotonesProductos(pagina, data.totalPages, estado, buscar);
+    });
+}
+
+function limpiarModalProducto() {
+    document.getElementById('tituloModalProducto').innerHTML =
+        '<i class="bi bi-box-seam me-2"></i>Nuevo Producto';
+    ['inputIdProducto','inputEan','inputDescripcion','selectTipo',
+     'inputCostoProducto','inputVenta','inputEstadoProducto'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const stock = document.getElementById('inputStock');
+    if (stock) stock.value = '0';
+    const idInput = document.getElementById('inputIdProducto');
+    if (idInput) idInput.disabled = false;
+}
+
+function editarProducto(btn) {
+    const d = btn.dataset;
+    document.getElementById('tituloModalProducto').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Producto ' + d.id;
+    document.getElementById('inputIdProducto').value      = d.id;
+    document.getElementById('inputIdProducto').disabled   = true; 
+    document.getElementById('inputEan').value             = d.ean !== '-' ? d.ean : '';
+    document.getElementById('inputDescripcion').value     = d.descripcion;
+    document.getElementById('selectTipo').value           = d.tipo;
+    document.getElementById('inputCostoProducto').value   = d.costo;
+    document.getElementById('inputVenta').value           = d.venta;
+    document.getElementById('inputStock').value           = d.stock;
+    document.getElementById('inputEstadoProducto').value  = d.estado;
+}
+
+function guardarProducto(event) {
+    event.preventDefault();
+    const form     = document.getElementById('formProducto');
+    const formData = new FormData(form);
+    const idInput = document.getElementById('inputIdProducto');
+    if (idInput.disabled) {
+        formData.set('idProducto', idInput.value);
+    }
+
+    fetch('/productos/guardar/ajax', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(
+                document.getElementById('modalProducto')).hide();
+            Swal.fire({
+                icon: 'success', title: '¡Guardado!',
+                text: data.mensaje, timer: 2000,
+                showConfirmButton: false
+            }).then(() => recargarTablaProductos());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+        }
+    })
+    .catch(() => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
+    });
+}
+
+function confirmarEstadoProducto(url, estadoActual) {
+    const esActivo = estadoActual == 1;
+    const id = url.split('/').pop();
+
+    Swal.fire({
+        title: esActivo ? '¿Suspender producto?' : '¿Activar producto?',
+        text: esActivo
+            ? 'El producto no aparecerá en nuevos ingresos'
+            : 'El producto volverá a estar disponible',
+        icon: esActivo ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esActivo ? 'Sí, suspender' : 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/productos/estado/ajax/' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Actualizado',
+                        text: data.mensaje, timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => recargarTablaProductos());
+                }
+            });
+        }
+    });
+}
+
+function recargarTablaProductos() {
+    const urlParams    = new URLSearchParams(window.location.search);
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+    irPaginaProductos(paginaActual);
+}
+
+function irPaginaProductos(pagina) {
+    history.pushState({}, '', '/productos?page=' + pagina);
+    filtrarProductosServidor('', pagina, '');
+}
+
+function actualizarPaginacionProductos(paginaActual, totalPaginas,
+                                        totalElements, mostrando) {
+    const textoMostrando = document.querySelector('.card-footer .text-muted');
+    if (textoMostrando) {
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong> de
+             <strong>${totalElements}</strong> registros`;
+    }
+    const textoPagina = document.querySelector('.col-md-auto .text-muted');
+    if (textoPagina) {
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de
+             <strong>${totalPaginas}</strong> —
+             Total: <strong>${totalElements}</strong> registros`;
+    }
+}
+
+function actualizarBotonesProductos(paginaActual, totalPaginas,
+                                     estado = '', buscar = '') {
+    const nav = document.querySelector('.pagination');
+    if (!nav) return;
+
+    let html = `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual > 0
+               ? `filtrarProductosServidor('${estado}', ${paginaActual - 1}, '${buscar}')`
+               : ''}">
+            <i class="bi bi-chevron-left"></i>
+        </a></li>`;
+
+    for (let i = 0; i < totalPaginas; i++) {
+        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
+            <a class="page-link" href="javascript:void(0)"
+               onclick="filtrarProductosServidor('${estado}', ${i}, '${buscar}')">
+               ${i + 1}</a></li>`;
+    }
+
+    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual < totalPaginas - 1
+               ? `filtrarProductosServidor('${estado}', ${paginaActual + 1}, '${buscar}')`
+               : ''}">
+            <i class="bi bi-chevron-right"></i>
+        </a></li>`;
+
+    nav.innerHTML = html;
+}
