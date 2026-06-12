@@ -85,6 +85,50 @@
         </div>
     </div>
 	
+	
+	<!-- Graficos ApexCharts -->
+	<h6 class="fw-bold mb-3">
+	    <i class="bi bi-bar-chart-line me-2"></i>Análisis de Inventario
+	</h6>
+	<div class="row g-3 mb-4">
+	    <div class="col-md-4">
+	        <div class="card card-stat p-3 h-100">
+	            <div class="text-muted small mb-2">
+	                <i class="bi bi-pie-chart me-1"></i>Productos por Tipo
+	            </div>
+	            <div id="graficoDona"></div>
+	        </div>
+	    </div>
+	    <div class="col-md-8">
+	        <div class="card card-stat p-3 h-100">
+	            <div class="text-muted small mb-2">
+	                <i class="bi bi-bar-chart me-1"></i>
+	                Ingresos vs Salidas — Últimos 6 meses
+	            </div>
+	            <div id="graficoBarras"></div>
+	        </div>
+	    </div>
+	    <div class="col-md-12">
+	        <div class="card card-stat p-3">
+	            <div class="text-muted small mb-2">
+	                <i class="bi bi-trophy me-1"></i>
+	                Top 5 Productos con Mayor Stock
+	            </div>
+	            <div id="graficoTop5"></div>
+	        </div>
+	    </div>
+	</div>
+	<div id="chartData"
+	     th:data-tipo-labels="${tipoLabels}"
+	     th:data-tipo-counts="${tipoCounts}"
+	     th:data-meses-labels="${mesesLabels}"
+	     th:data-ingresos="${ingresosData}"
+	     th:data-salidas="${salidasData}"
+	     th:data-top5-labels="${top5Labels}"
+	     th:data-top5-stock="${top5Stock}"
+	     style="display:none">
+	</div>
+	
 	<!-- Stock de tabla -->
 	<h6 class="fw-bold mb-3">
 	    <i class="bi bi-clipboard-data me-2"></i>Stock Actual

@@ -422,8 +422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         main?.classList.add('expanded');
         if (iconBot) iconBot.className = 'bi bi-chevron-right fs-5';
     }
-});
 
+    if (document.getElementById('chartData')) {
+        cargarScript('/js/dashboard.js');
+    }
+});
 
 function navegarAjax(url, pushState = true) {
     fetch(url, {
@@ -470,11 +473,31 @@ function actualizarSidebarActivo(url) {
 }
 
 function ejecutarScripts(contenedor) {
+    ['graficoDona', 'graficoBarras', 'graficoTop5'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el._apexcharts) {
+            el._apexcharts.destroy();
+            delete el._apexcharts;
+        }
+    });
     contenedor.querySelectorAll('script').forEach(script => {
+        if (script.src) return; 
         const nuevoScript = document.createElement('script');
         nuevoScript.textContent = script.textContent;
         document.body.appendChild(nuevoScript);
     });
+
+    if (document.getElementById('chartData')) {
+        cargarScript('/js/dashboard.js');
+    }
+}
+
+function cargarScript(src) {
+    const existente = document.querySelector(`script[src="${src}"]`);
+    if (existente) existente.remove(); 
+    const script = document.createElement('script');
+    script.src = src;
+    document.body.appendChild(script);
 }
 
 window.addEventListener('popstate', (e) => {
