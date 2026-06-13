@@ -210,15 +210,17 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Proveedor</label>
-                                <select class="form-select"
-                                        name="proveedor.idProveedor"
-                                        id="selectProveedor">
-                                    <option value="">-- Seleccione --</option>
-                                    <option th:each="pv : ${proveedores}"
-                                            th:value="${pv.idProveedor}"
-                                            th:text="${pv.nombre}">
-                                    </option>
-                                </select>
+								<select class="form-select"
+								        name="proveedor.idProveedor"
+								        id="selectProveedor"
+								        onchange="autocompletarRucProveedor(this)">
+								    <option value="">-- Seleccione --</option>
+								    <option th:each="pv : ${proveedores}"
+								            th:value="${pv.idProveedor}"
+								            th:data-ruc="${pv.ruc}"
+								            th:text="${pv.nombre}">
+								    </option>
+								</select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Sede</label>

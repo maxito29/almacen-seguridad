@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Proveedores', ~{::section})}">
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-truck text-primary me-2"></i>Proveedores
+            </h4>
+            <small class="text-muted">
+                Gestión de proveedores con consulta SUNAT
+            </small>
+        </div>
+        <button class="btn btn-primary btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#modalProveedor"
+                onclick="limpiarModalProveedor()">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Proveedor
+        </button>
+    </div>
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscador" class="form-control"
+                               placeholder="Buscar por nombre o RUC..."
+                               onkeyup="filtrarTablaProveedores()"/>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroEstado" class="form-select form-select-sm"
+                            onchange="filtrarDesdeSelectProveedores(this.value)">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="suspendido">Suspendido</option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <small class="text-muted">
+                        Página <strong th:text="${paginaActual + 1}"></strong>
+                        de <strong th:text="${totalPaginas}"></strong>
+                        — Total:
+                        <strong th:text="${paginado.totalElements}"></strong>
+                        registros
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card card-stat">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0"
+                       id="tablaProveedores">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th style="width:120px">RUC</th>
+                            <th>Razón Social</th>
+                            <th class="d-none d-xl-table-cell">Dirección</th>
+                            <th style="width:100px">Tipo</th>
+                            <th style="width:100px">SUNAT</th>
+                            <th style="width:85px">Estado</th>
+                            <th style="width:75px">Acc.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${proveedores}"
+                            th:classappend="${p.estado == 2}
+                                ? 'table-secondary' : ''">
+                            <td th:text="${p.idProveedor}"></td>
+                            <td>
+                                <span class="fw-semibold text-primary"
+                                      th:text="${p.ruc ?: '-'}"></span>
+                            </td>
+                            <td th:text="${p.nombre}"></td>
+                            <td class="d-none d-xl-table-cell text-muted"
+                                th:text="${p.direccion ?: '-'}"></td>
+                            <td>
+                                <span th:if="${p.tipo != null}"
+                                      class="badge bg-secondary"
+                                      th:text="${p.tipo}"></span>
+                                <span th:if="${p.tipo == null}"
+                                      class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <span th:if="${p.estadoSunat == 'ACTIVO'}"
+                                      class="badge bg-success"
+                                      th:text="${p.estadoSunat}"></span>
+                                <span th:if="${p.estadoSunat != 'ACTIVO'
+                                              and p.estadoSunat != null}"
+                                      class="badge bg-danger"
+                                      th:text="${p.estadoSunat}"></span>
+                                <span th:if="${p.estadoSunat == null}"
+                                      class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <span th:if="${p.estado == 1}"
+                                      class="badge bg-success">Activo</span>
+                                <span th:if="${p.estado == 2}"
+                                      class="badge bg-secondary">
+                                    Suspendido</span>
+                            </td>
+                            <td>
+                                <div class="acciones-btn">
+                                    <button class="btn btn-warning btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalProveedor"
+                                            th:data-id="${p.idProveedor}"
+                                            th:data-ruc="${p.ruc}"
+                                            th:data-nombre="${p.nombre}"
+                                            th:data-direccion="${p.direccion}"
+                                            th:data-telefono="${p.telefono}"
+                                            th:data-tipo="${p.tipo}"
+                                            th:data-estadosunat="${p.estadoSunat}"
+                                            th:data-estado="${p.estado}"
+                                            onclick="editarProveedor(this)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a href="javascript:void(0)"
+                                       th:data-url="@{/proveedores/estado/{id}
+                                           (id=${p.idProveedor})}"
+                                       th:data-estado="${p.estado}"
+                                       th:class="${p.estado == 1}
+                                           ? 'btn btn-danger btn-sm'
+                                           : 'btn btn-success btn-sm'"
+                                       onclick="confirmarEstadoProveedor(
+                                           this.dataset.url,
+                                           this.dataset.estado)">
+                                        <i th:class="${p.estado == 1}
+                                            ? 'bi bi-pause-circle'
+                                            : 'bi bi-play-circle'"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(proveedores)}">
+                            <td colspan="8"
+                                class="text-center text-muted py-4">
+                                No hay proveedores registrados
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between
+                    align-items-center">
+            <small class="text-muted">
+                Mostrando
+                <strong th:text="${proveedores.size()}"></strong>
+                de
+                <strong th:text="${paginado.totalElements}"></strong>
+                registros
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item"
+                        th:classappend="${paginaActual == 0}
+                            ? 'disabled' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0}
+                               ? 'irPaginaProveedores('
+                                 + ${paginaActual - 1} + ')'
+                               : ''">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(
+                            0, totalPaginas - 1)}"
+                        th:classappend="${i == paginaActual}
+                            ? 'active' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="'irPaginaProveedores(' + ${i} + ')'">
+                            <span th:text="${i + 1}"></span>
+                        </a>
+                    </li>
+                    <li class="page-item"
+                        th:classappend="${paginaActual == totalPaginas - 1}
+                            ? 'disabled' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1}
+                               ? 'irPaginaProveedores('
+                                 + ${paginaActual + 1} + ')'
+                               : ''">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalProveedor" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title" id="tituloModalProveedor">
+                        <i class="bi bi-truck me-2"></i>Nuevo Proveedor
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formProveedor"
+                      onsubmit="guardarProveedor(event)">
+                    <input type="hidden" name="idProveedor"
+                           id="idProveedor"/>
+                    <input type="hidden" name="estado"
+                           id="inputEstadoProveedor"/>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    RUC
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control"
+                                           name="ruc" id="inputRucProveedor"
+                                           placeholder="Ej: 20601234567"
+                                           maxlength="11"/>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            id="btnConsultarRuc"
+                                            onclick="consultarRucProveedor()">
+                                        <i class="bi bi-search me-1"></i>
+                                        Consultar SUNAT
+                                    </button>
+                                </div>
+                                <small class="text-muted">
+                                    Ingresa el RUC y presiona Consultar
+                                    para autocompletar
+                                </small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Teléfono
+                                    <span class="text-muted fw-normal">
+                                        (opcional)
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control"
+                                       name="telefono" id="inputTelefono"
+                                       placeholder="Ej: 01-2345678"/>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">
+                                    Razón Social / Nombre
+                                </label>
+                                <input type="text" class="form-control"
+                                       name="nombre" id="inputNombreProveedor"
+                                       placeholder="Se rellena automático con la API"
+                                       required/>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">
+                                    Dirección
+                                </label>
+                                <input type="text" class="form-control"
+                                       name="direccion"
+                                       id="inputDireccionProveedor"
+                                       placeholder="Se rellena automático con la API"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Tipo
+                                </label>
+                                <input type="text" class="form-control"
+                                       name="tipo" id="inputTipoProveedor"
+                                       readonly
+                                       placeholder="NATURAL / JURIDICA"/>
+                            </div>
+							<div class="col-md-6">
+							    <label class="form-label fw-semibold">
+							        Estado SUNAT
+							    </label>
+							    <select class="form-select"
+							            name="estadoSunat"
+							            id="inputEstadoSunat">
+							        <option value="">-- Sin información --</option>
+							        <option value="ACTIVO">ACTIVO</option>
+							        <option value="INHABILITADO">INHABILITADO</option>
+							        <option value="DE BAJA">DE BAJA</option>
+							        <option value="SUSPENDIDO">SUSPENDIDO</option>
+							    </select>
+							    <small class="text-muted">
+							        Se autocompleta con SUNAT o ingrésalo manualmente
+							    </small>
+							</div>
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
