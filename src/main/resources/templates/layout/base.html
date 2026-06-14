@@ -141,5 +141,69 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/scripts.js}"></script>
+
+<button id="btnChatIA" class="chat-ia-burbuja"
+        onclick="toggleChatIA()">
+    <i class="bi bi-robot fs-4"></i>
+</button>
+
+<div id="panelChatIA" class="chat-ia-panel">
+    <div class="chat-ia-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-robot fs-5"></i>
+            <div>
+                <div class="fw-bold" style="font-size:14px">
+                    Asistente Almacén
+                </div>
+                <div style="font-size:11px; opacity:0.8">
+                    Powered by Groq
+                </div>
+            </div>
+        </div>
+        <button onclick="toggleChatIA()" class="chat-ia-cerrar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div id="chatMensajes" class="chat-ia-mensajes">
+        <div class="chat-mensaje chat-mensaje-bot">
+            ¡Hola! 👋 Soy tu asistente del almacén. Puedo ayudarte con:
+            <ul class="mb-0 mt-1" style="font-size:12px">
+                <li>Consultar stock de productos</li>
+                <li>Ver alertas de stock bajo</li>
+                <li>Resúmenes de ingresos y salidas</li>
+                <li>Recomendaciones de reabastecimiento</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="chat-ia-sugerencias" id="chatSugerencias">
+        <button class="chat-sugerencia"
+                onclick="enviarSugerencia('¿Qué productos tienen stock bajo?')">
+            Stock bajo
+        </button>
+        <button class="chat-sugerencia"
+                onclick="enviarSugerencia('Dame un resumen general del inventario')">
+            Resumen general
+        </button>
+        <button class="chat-sugerencia"
+                onclick="enviarSugerencia('¿Qué productos debería reabastecer pronto?')">
+            Recomendaciones
+        </button>
+    </div>
+
+    <div class="chat-ia-input-area">
+        <input type="text" id="chatInput"
+               class="form-control"
+               placeholder="Escribe tu pregunta..."
+               onkeypress="if(event.key==='Enter') enviarMensajeChat()"/>
+        <button onclick="enviarMensajeChat()"
+                class="btn btn-primary"
+                id="btnEnviarChat">
+            <i class="bi bi-send"></i>
+        </button>
+    </div>
+</div>
+
 </body>
 </html>

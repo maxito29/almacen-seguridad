@@ -1213,3 +1213,83 @@ function autocompletarRucProveedor(select) {
         if (eraAutocompletado) inputFactura.value = '';
     }
 }
+
+
+//CHAT IA 
+
+function toggleChatIA() {
+    const panel = document.getElementById('panelChatIA');
+    panel.classList.toggle('activo');
+
+    if (panel.classList.contains('activo')) {
+        document.getElementById('chatInput').focus();
+    }
+}
+
+function enviarSugerencia(texto) {
+    document.getElementById('chatInput').value = texto;
+    enviarMensajeChat();
+}
+
+function enviarMensajeChat() {
+    const input = document.getElementById('chatInput');
+    const pregunta = input.value.trim();
+
+    if (!pregunta) return;
+
+    const mensajes = document.getElementById('chatMensajes');
+    const divUsuario = document.createElement('div');
+    divUsuario.className = 'chat-mensaje chat-mensaje-usuario';
+    divUsuario.textContent = pregunta;
+    mensajes.appendChild(divUsuario);
+
+    input.value = '';
+    const sugerencias = document.getElementById('chatSugerencias');
+    if (sugerencias) sugerencias.style.display = 'none';
+    const divLoading = document.createElement('div');
+    divLoading.className = 'chat-mensaje chat-mensaje-loading';
+    divLoading.id = 'chatLoading';
+    divLoading.innerHTML = `<span class="chat-loading-dots">
+        <span>●</span><span>●</span><span>●</span></span>`;
+    mensajes.appendChild(divLoading);
+
+    mensajes.scrollTop = mensajes.scrollHeight;
+
+    const btnEnviar = document.getElementById('btnEnviarChat');
+    input.disabled = true;
+    btnEnviar.disabled = true;
+
+    fetch('/api/chat/preguntar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pregunta: pregunta })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('chatLoading')?.remove();
+
+        const divBot = document.createElement('div');
+        divBot.className = 'chat-mensaje chat-mensaje-bot';
+        divBot.textContent = data.respuesta || data.error
+            || 'No pude procesar tu solicitud.';
+        mensajes.appendChild(divBot);
+
+        mensajes.scrollTop = mensajes.scrollHeight;
+        input.disabled = false;
+        btnEnviar.disabled = false;
+        input.focus();
+    })
+    .catch(() => {
+        document.getElementById('chatLoading')?.remove();
+
+        const divError = document.createElement('div');
+        divError.className = 'chat-mensaje chat-mensaje-bot';
+        divError.textContent =
+            'Error de conexión. Intenta nuevamente.';
+        mensajes.appendChild(divError);
+
+        mensajes.scrollTop = mensajes.scrollHeight;
+        input.disabled = false;
+        btnEnviar.disabled = false;
+    });
+}
