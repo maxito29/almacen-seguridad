@@ -422,8 +422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         main?.classList.add('expanded');
         if (iconBot) iconBot.className = 'bi bi-chevron-right fs-5';
     }
-});
 
+    if (document.getElementById('chartData')) {
+        cargarScript('/js/dashboard.js');
+    }
+});
 
 function navegarAjax(url, pushState = true) {
     fetch(url, {
@@ -470,11 +473,31 @@ function actualizarSidebarActivo(url) {
 }
 
 function ejecutarScripts(contenedor) {
+    ['graficoDona', 'graficoBarras', 'graficoTop5'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el._apexcharts) {
+            el._apexcharts.destroy();
+            delete el._apexcharts;
+        }
+    });
     contenedor.querySelectorAll('script').forEach(script => {
+        if (script.src) return; 
         const nuevoScript = document.createElement('script');
         nuevoScript.textContent = script.textContent;
         document.body.appendChild(nuevoScript);
     });
+
+    if (document.getElementById('chartData')) {
+        cargarScript('/js/dashboard.js');
+    }
+}
+
+function cargarScript(src) {
+    const existente = document.querySelector(`script[src="${src}"]`);
+    if (existente) existente.remove(); 
+    const script = document.createElement('script');
+    script.src = src;
+    document.body.appendChild(script);
 }
 
 window.addEventListener('popstate', (e) => {
@@ -857,233 +880,116 @@ function actualizarBotonesProductos(paginaActual, totalPaginas,
 function filtrarTablaTrabajadores() {
     const texto = document.getElementById('buscador').value;
     const estado = document.getElementById('filtroEstado').value;
-
     filtrarTrabajadoresServidor(estado, 0, texto);
 }
 
 function filtrarDesdeSelectTrabajadores(estado) {
     const texto = document.getElementById('buscador').value;
-
     filtrarTrabajadoresServidor(estado, 0, texto);
 }
 
-function filtrarTrabajadoresServidor(
-    estado,
-    pagina,
-    buscar = ''
-) {
-
-    fetch(
-        `/trabajadores/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`
-    )
+function filtrarTrabajadoresServidor(estado, pagina, buscar = '') {
+    fetch(`/trabajadores/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`)
     .then(res => res.json())
     .then(data => {
-        const tbody =
-            document.querySelector('#tablaTrabajadores tbody');
+        const tbody = document.querySelector('#tablaTrabajadores tbody');
         tbody.innerHTML = '';
 
-        if (
-            !data.trabajadores ||
-            data.trabajadores.length === 0
-        ) {
+        if (!data.trabajadores || data.trabajadores.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8"
-                        class="text-center text-muted py-4">
+                    <td colspan="8" class="text-center text-muted py-4">
                         No hay trabajadores registrados
                     </td>
                 </tr>`;
-
             return;
         }
 
         data.trabajadores.forEach((t, idx) => {
-
-            const estadoBadge =
-                t.activoCesado === 'ACTIVO'
+            const estadoBadge = t.activoCesado === 'ACTIVO'
                 ? '<span class="badge bg-success">ACTIVO</span>'
                 : '<span class="badge bg-secondary">CESADO</span>';
 
-            const btnEstado =
-                t.activoCesado === 'ACTIVO'
+            const btnEstado = t.activoCesado === 'ACTIVO'
                 ? `<a href="javascript:void(0)"
                         data-id="${t.idTrabajador}"
                         data-estado="${t.activoCesado}"
                         class="btn btn-danger btn-sm"
-                        onclick="confirmarEstadoTrabajador(
-                            this.dataset.id,
-                            this.dataset.estado)">
+                        onclick="confirmarEstadoTrabajador(this.dataset.id, this.dataset.estado)">
                         <i class="bi bi-pause-circle"></i>
                    </a>`
-
                 : `<a href="javascript:void(0)"
                         data-id="${t.idTrabajador}"
                         data-estado="${t.activoCesado}"
                         class="btn btn-success btn-sm"
-                        onclick="confirmarEstadoTrabajador(
-                            this.dataset.id,
-                            this.dataset.estado)">
+                        onclick="confirmarEstadoTrabajador(this.dataset.id, this.dataset.estado)">
                         <i class="bi bi-play-circle"></i>
                    </a>`;
 
             tbody.innerHTML += `
                 <tr>
-
                     <td>${t.idTrabajador}</td>
-
                     <td>
-                        <span class="fw-semibold">
-                            ${t.nombreCompleto}
-                        </span>
+                        <span class="fw-semibold">${t.nombreCompleto}</span>
                         <br>
-                        <small class="text-muted">
-                            ${t.documentoIdentidad}
-                        </small>
+                        <small class="text-muted">${t.documentoIdentidad}</small>
                     </td>
-
                     <td>${t.documentoIdentidad}</td>
-
                     <td>${t.puesto ?? ''}</td>
-
                     <td>${t.cliente ?? ''}</td>
-
                     <td>
-                        <span class="badge bg-dark">
-                            ${t.sede
-                                ? t.sede.nombre
-                                : ''}
-                        </span>
+                        <span class="badge bg-dark">${t.sede ? t.sede.nombre : ''}</span>
                     </td>
-
-                    <td>
-                        ${estadoBadge}
-                    </td>
-
+                    <td>${estadoBadge}</td>
                     <td>
                         <div class="acciones-btn">
-
-                            <button
-                                class="btn btn-warning btn-sm"
+                            <button class="btn btn-warning btn-sm"
                                 data-bs-toggle="modal"
                                 data-bs-target="#modalTrabajador">
-
                                 <i class="bi bi-pencil"></i>
-
                             </button>
-
                             ${btnEstado}
-
                         </div>
                     </td>
-
                 </tr>`;
         });
-		
-		actualizarPaginacionTrabajadores(
-		    pagina,
-		    data.totalPages,
-		    data.totalElements,
-		    data.trabajadores.length
-		);
 
-		actualizarBotonesTrabajadores(
-		    pagina,
-		    data.totalPages,
-		    estado,
-		    buscar
-		);
-
+        actualizarPaginacionTrabajadores(pagina, data.totalPages,
+            data.totalElements, data.trabajadores.length);
+        actualizarBotonesTrabajadores(pagina, data.totalPages, estado, buscar);
     });
 }
 
-function confirmarEstadoTrabajador(
-    id,
-    estadoActual
-) {
-
-    const esActivo =
-        estadoActual === 'ACTIVO';
+function confirmarEstadoTrabajador(id, estadoActual) {
+    const esActivo = estadoActual === 'ACTIVO';
 
     Swal.fire({
-
-        title: esActivo
-            ? '¿Cesar trabajador?'
-            : '¿Activar trabajador?',
-
+        title: esActivo ? '¿Cesar trabajador?' : '¿Activar trabajador?',
         text: esActivo
             ? 'El trabajador pasará a estado CESADO'
             : 'El trabajador volverá a estado ACTIVO',
-
-        icon: esActivo
-            ? 'warning'
-            : 'question',
-
+        icon: esActivo ? 'warning' : 'question',
         showCancelButton: true,
-
-        confirmButtonColor:
-            esActivo
-                ? '#dc3545'
-                : '#198754',
-
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
         cancelButtonColor: '#6c757d',
-
-        confirmButtonText:
-            esActivo
-                ? 'Sí, cesar'
-                : 'Sí, activar',
-
+        confirmButtonText: esActivo ? 'Sí, cesar' : 'Sí, activar',
         cancelButtonText: 'Cancelar'
-
-    })
-
-    .then((result) => {
-
+    }).then((result) => {
         if (result.isConfirmed) {
-
-            fetch(
-                '/trabajadores/estado/ajax/' + id,
-                {
-                    method: 'POST'
-                }
-            )
-
+            fetch('/trabajadores/estado/ajax/' + id, { method: 'POST' })
             .then(res => res.json())
-
             .then(data => {
-
                 if (data.success) {
-
                     Swal.fire({
-
                         icon: 'success',
-
                         title: 'Actualizado',
-
                         text: data.mensaje,
-
                         timer: 1500,
-
                         showConfirmButton: false
-
-                    })
-
-                    .then(() => {
-
-                        const estado =
-                            document.getElementById(
-                                'filtroEstado'
-                            ).value;
-
-                        const buscar =
-                            document.getElementById(
-                                'buscador'
-                            ).value;
-
-                        filtrarTrabajadoresServidor(
-                            estado,
-                            0,
-                            buscar
-                        );
+                    }).then(() => {
+                        const estado = document.getElementById('filtroEstado').value;
+                        const buscar = document.getElementById('buscador').value;
+                        filtrarTrabajadoresServidor(estado, 0, buscar);
                     });
                 }
             });
@@ -1092,29 +998,19 @@ function confirmarEstadoTrabajador(
 }
 
 function limpiarModalTrabajador() {
-
     document.getElementById('tituloModalTrabajador').innerHTML =
         '<i class="bi bi-people-fill me-2"></i>Nuevo Trabajador';
 
-    [
-        'idTrabajador',
-        'inputNombre',
-        'inputDni',
-        'inputPuesto',
-        'inputCliente',
-        'selectSedeTrabajador',
-        'inputFechaIngreso'
+    ['idTrabajador','inputNombre','inputDni','inputPuesto',
+     'inputCliente','selectSedeTrabajador','inputFechaIngreso'
     ].forEach(id => {
-
         const el = document.getElementById(id);
-
         if (el) el.value = '';
     });
 }
+
 function editarTrabajador(btn) {
-
     const d = btn.dataset;
-
     document.getElementById('tituloModalTrabajador').innerHTML =
         '<i class="bi bi-pencil me-2"></i>Editar Trabajador #' + d.id;
 
@@ -1127,209 +1023,420 @@ function editarTrabajador(btn) {
     document.getElementById('inputFechaIngreso').value = d.fecha || '';
 }
 
-
 function irPaginaTrabajadores(pagina) {
-
-    history.pushState(
-        {},
-        '',
-        '/trabajadores?page=' + pagina
-    );
-
-    const estado =
-        document.getElementById('filtroEstado').value;
-
-    const buscar =
-        document.getElementById('buscador').value;
-
-    filtrarTrabajadoresServidor(
-        estado,
-        pagina,
-        buscar
-    );
+    history.pushState({}, '', '/trabajadores?page=' + pagina);
+    const estado = document.getElementById('filtroEstado').value;
+    const buscar = document.getElementById('buscador').value;
+    filtrarTrabajadoresServidor(estado, pagina, buscar);
 }
-function actualizarPaginacionTrabajadores(
-    paginaActual,
-    totalPaginas,
-    totalElements,
-    mostrando
-) {
 
-    const textoMostrando =
-        document.querySelector('.card-footer .text-muted');
-
+function actualizarPaginacionTrabajadores(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.querySelector('.card-footer .text-muted');
     if (textoMostrando) {
-
         textoMostrando.innerHTML =
-            `Mostrando <strong>${mostrando || 0}</strong>
-             de <strong>${totalElements}</strong> registros`;
+            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
     }
 
-    const textoPagina =
-        document.querySelector('.col-md-auto .text-muted');
-
+    const textoPagina = document.querySelector('.col-md-auto .text-muted');
     if (textoPagina) {
-
         textoPagina.innerHTML =
-            `Página <strong>${paginaActual + 1}</strong>
-             de <strong>${totalPaginas}</strong>
-             — Total:
-             <strong>${totalElements}</strong> registros`;
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
     }
 }
 
-function actualizarBotonesTrabajadores(
-    paginaActual,
-    totalPaginas,
-    estado = '',
-    buscar = ''
-) {
-
+function actualizarBotonesTrabajadores(paginaActual, totalPaginas, estado = '', buscar = '') {
     const nav = document.querySelector('.pagination');
-
     if (!nav) return;
 
     let html = '';
 
     html += `
     <li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link"
-           href="javascript:void(0)"
-           onclick="${
-               paginaActual > 0
-               ? `irPaginaTrabajadores(${paginaActual - 1})`
-               : ''
-           }">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual > 0 ? `irPaginaTrabajadores(${paginaActual - 1})` : ''}">
             <i class="bi bi-chevron-left"></i>
         </a>
     </li>`;
 
     for (let i = 0; i < totalPaginas; i++) {
-
         html += `
         <li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link"
-               href="javascript:void(0)"
+            <a class="page-link" href="javascript:void(0)"
                onclick="irPaginaTrabajadores(${i})">
-
                 ${i + 1}
-
             </a>
         </li>`;
     }
 
     html += `
-    <li class="page-item ${
-        paginaActual === totalPaginas - 1
-        ? 'disabled'
-        : ''
-    }">
-
-        <a class="page-link"
-           href="javascript:void(0)"
-           onclick="${
-               paginaActual < totalPaginas - 1
-               ? `irPaginaTrabajadores(${paginaActual + 1})`
-               : ''
-           }">
-
+    <li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual < totalPaginas - 1 ? `irPaginaTrabajadores(${paginaActual + 1})` : ''}">
             <i class="bi bi-chevron-right"></i>
-
         </a>
-
     </li>`;
 
     nav.innerHTML = html;
 }
 
-function guardarTrabajador(event) {
+//PROVEEDORES
 
+function filtrarTablaProveedores() {
+    const texto  = document.getElementById('buscador').value;
+    const estado = document.getElementById('filtroEstado').value;
+    filtrarProveedoresServidor(estado, 0, texto);
+}
+
+function filtrarDesdeSelectProveedores(estado) {
+    const texto = document.getElementById('buscador').value;
+    filtrarProveedoresServidor(estado, 0, texto);
+}
+
+function filtrarProveedoresServidor(estado, pagina, buscar = '') {
+    fetch(`/proveedores/lista/json?page=${pagina}&estado=${estado}` +
+          `&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('#tablaProveedores tbody');
+        tbody.innerHTML = '';
+
+        if (!data.proveedores || data.proveedores.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    No hay proveedores registrados
+                </td></tr>`;
+            actualizarPaginacionProveedores(pagina, 0, 0, 0);
+            return;
+        }
+
+        data.proveedores.forEach(p => {
+            const estadoBadge = p.estado === 1
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-secondary">Suspendido</span>';
+
+            const btnEstado = p.estado === 1
+                ? `<a href="javascript:void(0)"
+                      data-url="/proveedores/estado/${p.idProveedor}"
+                      data-estado="${p.estado}"
+                      class="btn btn-danger btn-sm"
+                      onclick="confirmarEstadoProveedor(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-pause-circle"></i></a>`
+                : `<a href="javascript:void(0)"
+                      data-url="/proveedores/estado/${p.idProveedor}"
+                      data-estado="${p.estado}"
+                      class="btn btn-success btn-sm"
+                      onclick="confirmarEstadoProveedor(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-play-circle"></i></a>`;
+
+            const sunatBadge = p.estadoSunat === 'ACTIVO'
+                ? `<span class="badge bg-success">${p.estadoSunat}</span>`
+                : p.estadoSunat
+                    ? `<span class="badge bg-danger">${p.estadoSunat}</span>`
+                    : '-';
+
+            const tipoBadge = p.tipo
+                ? `<span class="badge bg-secondary">${p.tipo}</span>`
+                : '-';
+
+            tbody.innerHTML += `
+            <tr class="${p.estado === 2 ? 'table-secondary' : ''}">
+                <td>${p.idProveedor}</td>
+                <td><span class="fw-semibold text-primary">${p.ruc || '-'}</span></td>
+                <td>${p.nombre}</td>
+                <td class="d-none d-xl-table-cell text-muted">${p.direccion || '-'}</td>
+                <td>${tipoBadge}</td>
+                <td>${sunatBadge}</td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <div class="acciones-btn">
+                        <button class="btn btn-warning btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalProveedor"
+                            data-id="${p.idProveedor}"
+                            data-ruc="${p.ruc || ''}"
+                            data-nombre="${p.nombre}"
+                            data-direccion="${p.direccion || ''}"
+                            data-telefono="${p.telefono || ''}"
+                            data-tipo="${p.tipo || ''}"
+                            data-estadosunat="${p.estadoSunat || ''}"
+                            data-estado="${p.estado}"
+                            onclick="editarProveedor(this)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${btnEstado}
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        actualizarPaginacionProveedores(pagina, data.totalPages,
+            data.totalElements, data.proveedores.length);
+        actualizarBotonesProveedores(pagina, data.totalPages, estado, buscar);
+    });
+}
+
+function limpiarModalProveedor() {
+    document.getElementById('tituloModalProveedor').innerHTML =
+        '<i class="bi bi-truck me-2"></i>Nuevo Proveedor';
+    ['idProveedor','inputRucProveedor','inputNombreProveedor',
+     'inputDireccionProveedor','inputTelefono','inputTipoProveedor',
+     'inputEstadoSunat','inputEstadoProveedor'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+function editarProveedor(btn) {
+    const d = btn.dataset;
+    document.getElementById('tituloModalProveedor').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Proveedor #' + d.id;
+    document.getElementById('idProveedor').value             = d.id;
+    document.getElementById('inputRucProveedor').value       = d.ruc;
+    document.getElementById('inputNombreProveedor').value    = d.nombre;
+    document.getElementById('inputDireccionProveedor').value = d.direccion;
+    document.getElementById('inputTelefono').value           = d.telefono;
+    document.getElementById('inputTipoProveedor').value      = d.tipo;
+    document.getElementById('inputEstadoSunat').value        = d.estadosunat;
+    document.getElementById('inputEstadoProveedor').value    = d.estado;
+}
+
+function consultarRucProveedor() {
+    const ruc = document.getElementById('inputRucProveedor').value.trim();
+
+    if (!ruc || ruc.length !== 11) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'RUC inválido',
+            text: 'El RUC debe tener exactamente 11 dígitos',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    const btn = document.getElementById('btnConsultarRuc');
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Consultando...';
+    btn.disabled = true;
+
+    fetch('/api/ruc/' + ruc)
+    .then(res => res.json())
+    .then(data => {
+        btn.innerHTML = '<i class="bi bi-search me-1"></i>Consultar SUNAT';
+        btn.disabled = false;
+
+        if (data.error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'No encontrado',
+                text: 'No se encontró información para ese RUC',
+                timer: 2500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        const nombre = document.getElementById('inputNombreProveedor');
+        const dir    = document.getElementById('inputDireccionProveedor');
+        const tipo   = document.getElementById('inputTipoProveedor');
+        const estado = document.getElementById('inputEstadoSunat');
+
+        nombre.value = data.razonSocial || data.nombre || '';
+        dir.value    = data.direccion   || '';
+        tipo.value   = data.tipoContribuyente || '';
+        estado.value = data.estado      || '';
+        [nombre, dir, tipo, estado].forEach(el => {
+            el.style.backgroundColor = '#d1fae5';
+            setTimeout(() => el.style.backgroundColor = '', 1500);
+        });
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Datos encontrados',
+            text: nombre.value,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    })
+    .catch(() => {
+        btn.innerHTML = '<i class="bi bi-search me-1"></i>Consultar SUNAT';
+        btn.disabled = false;
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo conectar con la API',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    });
+}
+
+function guardarProveedor(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('formProveedor'));
+
+    fetch('/proveedores/guardar/ajax', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(
+                document.getElementById('modalProveedor')).hide();
+            Swal.fire({
+                icon: 'success', title: '¡Guardado!',
+                text: data.mensaje, timer: 2000,
+                showConfirmButton: false
+            }).then(() => recargarTablaProveedores());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+        }
+    });
+}
+
+function confirmarEstadoProveedor(url, estadoActual) {
+    const esActivo = estadoActual == 1;
+    const id = url.split('/').pop();
+
+    Swal.fire({
+        title: esActivo ? '¿Suspender proveedor?' : '¿Activar proveedor?',
+        icon: esActivo ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esActivo ? 'Sí, suspender' : 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/proveedores/estado/ajax/' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Actualizado',
+                        text: data.mensaje, timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => recargarTablaProveedores());
+                }
+            });
+        }
+    });
+}
+
+function recargarTablaProveedores() {
+    const urlParams    = new URLSearchParams(window.location.search);
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+    irPaginaProveedores(paginaActual);
+}
+
+function irPaginaProveedores(pagina) {
+    history.pushState({}, '', '/proveedores?page=' + pagina);
+    filtrarProveedoresServidor('', pagina, '');
+}
+
+function actualizarPaginacionProveedores(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.querySelector('.card-footer .text-muted');
+    if (textoMostrando) {
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+    }
+    const textoPagina = document.querySelector('.col-md-auto .text-muted');
+    if (textoPagina) {
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+    }
+}
+
+function actualizarBotonesProveedores(paginaActual, totalPaginas, estado = '', buscar = '') {
+    const nav = document.querySelector('.pagination');
+    if (!nav) return;
+
+    let html = `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual > 0
+               ? `filtrarProveedoresServidor('${estado}', ${paginaActual - 1}, '${buscar}')`
+               : ''}">
+            <i class="bi bi-chevron-left"></i>
+        </a></li>`;
+
+    for (let i = 0; i < totalPaginas; i++) {
+        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
+            <a class="page-link" href="javascript:void(0)"
+               onclick="filtrarProveedoresServidor('${estado}', ${i}, '${buscar}')">
+               ${i + 1}</a></li>`;
+    }
+
+    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link" href="javascript:void(0)"
+           onclick="${paginaActual < totalPaginas - 1
+               ? `filtrarProveedoresServidor('${estado}', ${paginaActual + 1}, '${buscar}')`
+               : ''}">
+            <i class="bi bi-chevron-right"></i>
+        </a></li>`;
+
+    nav.innerHTML = html;
+}
+
+
+function guardarTrabajador(event) {
     event.preventDefault();
 
     const form = document.getElementById('formTrabajador');
-
     const formData = new FormData(form);
-
-    const esNuevo =
-        !document.getElementById('idTrabajador').value;
+    const esNuevo = !document.getElementById('idTrabajador').value;
 
     fetch('/trabajadores/guardar/ajax', {
-
         method: 'POST',
-
         body: new URLSearchParams(formData)
-
     })
-
     .then(res => res.json())
-
     .then(data => {
-
         if (data.success) {
-
             bootstrap.Modal.getInstance(
                 document.getElementById('modalTrabajador')
             ).hide();
 
             Swal.fire({
-
                 icon: 'success',
-
                 title: '¡Guardado!',
-
                 text: data.mensaje,
-
                 timer: 2000,
-
                 showConfirmButton: false
-
-            })
-
-            .then(() => {
-
-                const estado =
-                    document.getElementById(
-                        'filtroEstado'
-                    ).value;
-
-                const buscar =
-                    document.getElementById(
-                        'buscador'
-                    ).value;
-
-                filtrarTrabajadoresServidor(
-                    estado,
-                    0,
-                    buscar
-                );
+            }).then(() => {
+                const estado = document.getElementById('filtroEstado').value;
+                const buscar = document.getElementById('buscador').value;
+                filtrarTrabajadoresServidor(estado, 0, buscar);
             });
-
         } else {
-
             Swal.fire({
-
                 icon: 'error',
-
                 title: 'Error',
-
                 text: data.mensaje
-
             });
         }
-
     })
-
     .catch(() => {
-
         Swal.fire({
-
             icon: 'error',
-
             title: 'Error',
-
             text: 'Error de conexión'
-
         });
-
     });
+}
+
+function autocompletarRucProveedor(select) {
+    const opcionSeleccionada = select.options[select.selectedIndex];
+    const ruc = opcionSeleccionada?.dataset?.ruc || '';
+    const inputFactura = document.getElementById('inputFactura');
+    if (!inputFactura) return;
+
+    const valorActual = inputFactura.value;
+    const eraAutocompletado = /^\d{11}-/.test(valorActual);
+
+    if (ruc && (!valorActual || eraAutocompletado)) {
+        inputFactura.value = ruc;
+        inputFactura.focus();
+    } else if (!ruc) {
+        if (eraAutocompletado) inputFactura.value = '';
+    }
 }
