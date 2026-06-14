@@ -852,3 +852,484 @@ function actualizarBotonesProductos(paginaActual, totalPaginas,
 
     nav.innerHTML = html;
 }
+
+// trabajadores
+function filtrarTablaTrabajadores() {
+    const texto = document.getElementById('buscador').value;
+    const estado = document.getElementById('filtroEstado').value;
+
+    filtrarTrabajadoresServidor(estado, 0, texto);
+}
+
+function filtrarDesdeSelectTrabajadores(estado) {
+    const texto = document.getElementById('buscador').value;
+
+    filtrarTrabajadoresServidor(estado, 0, texto);
+}
+
+function filtrarTrabajadoresServidor(
+    estado,
+    pagina,
+    buscar = ''
+) {
+
+    fetch(
+        `/trabajadores/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`
+    )
+    .then(res => res.json())
+    .then(data => {
+        const tbody =
+            document.querySelector('#tablaTrabajadores tbody');
+        tbody.innerHTML = '';
+
+        if (
+            !data.trabajadores ||
+            data.trabajadores.length === 0
+        ) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8"
+                        class="text-center text-muted py-4">
+                        No hay trabajadores registrados
+                    </td>
+                </tr>`;
+
+            return;
+        }
+
+        data.trabajadores.forEach((t, idx) => {
+
+            const estadoBadge =
+                t.activoCesado === 'ACTIVO'
+                ? '<span class="badge bg-success">ACTIVO</span>'
+                : '<span class="badge bg-secondary">CESADO</span>';
+
+            const btnEstado =
+                t.activoCesado === 'ACTIVO'
+                ? `<a href="javascript:void(0)"
+                        data-id="${t.idTrabajador}"
+                        data-estado="${t.activoCesado}"
+                        class="btn btn-danger btn-sm"
+                        onclick="confirmarEstadoTrabajador(
+                            this.dataset.id,
+                            this.dataset.estado)">
+                        <i class="bi bi-pause-circle"></i>
+                   </a>`
+
+                : `<a href="javascript:void(0)"
+                        data-id="${t.idTrabajador}"
+                        data-estado="${t.activoCesado}"
+                        class="btn btn-success btn-sm"
+                        onclick="confirmarEstadoTrabajador(
+                            this.dataset.id,
+                            this.dataset.estado)">
+                        <i class="bi bi-play-circle"></i>
+                   </a>`;
+
+            tbody.innerHTML += `
+                <tr>
+
+                    <td>${t.idTrabajador}</td>
+
+                    <td>
+                        <span class="fw-semibold">
+                            ${t.nombreCompleto}
+                        </span>
+                        <br>
+                        <small class="text-muted">
+                            ${t.documentoIdentidad}
+                        </small>
+                    </td>
+
+                    <td>${t.documentoIdentidad}</td>
+
+                    <td>${t.puesto ?? ''}</td>
+
+                    <td>${t.cliente ?? ''}</td>
+
+                    <td>
+                        <span class="badge bg-dark">
+                            ${t.sede
+                                ? t.sede.nombre
+                                : ''}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${estadoBadge}
+                    </td>
+
+                    <td>
+                        <div class="acciones-btn">
+
+                            <button
+                                class="btn btn-warning btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalTrabajador">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </button>
+
+                            ${btnEstado}
+
+                        </div>
+                    </td>
+
+                </tr>`;
+        });
+		
+		actualizarPaginacionTrabajadores(
+		    pagina,
+		    data.totalPages,
+		    data.totalElements,
+		    data.trabajadores.length
+		);
+
+		actualizarBotonesTrabajadores(
+		    pagina,
+		    data.totalPages,
+		    estado,
+		    buscar
+		);
+
+    });
+}
+
+function confirmarEstadoTrabajador(
+    id,
+    estadoActual
+) {
+
+    const esActivo =
+        estadoActual === 'ACTIVO';
+
+    Swal.fire({
+
+        title: esActivo
+            ? '¿Cesar trabajador?'
+            : '¿Activar trabajador?',
+
+        text: esActivo
+            ? 'El trabajador pasará a estado CESADO'
+            : 'El trabajador volverá a estado ACTIVO',
+
+        icon: esActivo
+            ? 'warning'
+            : 'question',
+
+        showCancelButton: true,
+
+        confirmButtonColor:
+            esActivo
+                ? '#dc3545'
+                : '#198754',
+
+        cancelButtonColor: '#6c757d',
+
+        confirmButtonText:
+            esActivo
+                ? 'Sí, cesar'
+                : 'Sí, activar',
+
+        cancelButtonText: 'Cancelar'
+
+    })
+
+    .then((result) => {
+
+        if (result.isConfirmed) {
+
+            fetch(
+                '/trabajadores/estado/ajax/' + id,
+                {
+                    method: 'POST'
+                }
+            )
+
+            .then(res => res.json())
+
+            .then(data => {
+
+                if (data.success) {
+
+                    Swal.fire({
+
+                        icon: 'success',
+
+                        title: 'Actualizado',
+
+                        text: data.mensaje,
+
+                        timer: 1500,
+
+                        showConfirmButton: false
+
+                    })
+
+                    .then(() => {
+
+                        const estado =
+                            document.getElementById(
+                                'filtroEstado'
+                            ).value;
+
+                        const buscar =
+                            document.getElementById(
+                                'buscador'
+                            ).value;
+
+                        filtrarTrabajadoresServidor(
+                            estado,
+                            0,
+                            buscar
+                        );
+                    });
+                }
+            });
+        }
+    });
+}
+
+function limpiarModalTrabajador() {
+
+    document.getElementById('tituloModalTrabajador').innerHTML =
+        '<i class="bi bi-people-fill me-2"></i>Nuevo Trabajador';
+
+    [
+        'idTrabajador',
+        'inputNombre',
+        'inputDni',
+        'inputPuesto',
+        'inputCliente',
+        'selectSedeTrabajador',
+        'inputFechaIngreso'
+    ].forEach(id => {
+
+        const el = document.getElementById(id);
+
+        if (el) el.value = '';
+    });
+}
+function editarTrabajador(btn) {
+
+    const d = btn.dataset;
+
+    document.getElementById('tituloModalTrabajador').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Trabajador #' + d.id;
+
+    document.getElementById('idTrabajador').value = d.id;
+    document.getElementById('inputNombre').value = d.nombre;
+    document.getElementById('inputDni').value = d.dni;
+    document.getElementById('inputPuesto').value = d.puesto || '';
+    document.getElementById('inputCliente').value = d.cliente || '';
+    document.getElementById('selectSedeTrabajador').value = d.sede;
+    document.getElementById('inputFechaIngreso').value = d.fecha || '';
+}
+
+
+function irPaginaTrabajadores(pagina) {
+
+    history.pushState(
+        {},
+        '',
+        '/trabajadores?page=' + pagina
+    );
+
+    const estado =
+        document.getElementById('filtroEstado').value;
+
+    const buscar =
+        document.getElementById('buscador').value;
+
+    filtrarTrabajadoresServidor(
+        estado,
+        pagina,
+        buscar
+    );
+}
+function actualizarPaginacionTrabajadores(
+    paginaActual,
+    totalPaginas,
+    totalElements,
+    mostrando
+) {
+
+    const textoMostrando =
+        document.querySelector('.card-footer .text-muted');
+
+    if (textoMostrando) {
+
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong>
+             de <strong>${totalElements}</strong> registros`;
+    }
+
+    const textoPagina =
+        document.querySelector('.col-md-auto .text-muted');
+
+    if (textoPagina) {
+
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong>
+             de <strong>${totalPaginas}</strong>
+             — Total:
+             <strong>${totalElements}</strong> registros`;
+    }
+}
+
+function actualizarBotonesTrabajadores(
+    paginaActual,
+    totalPaginas,
+    estado = '',
+    buscar = ''
+) {
+
+    const nav = document.querySelector('.pagination');
+
+    if (!nav) return;
+
+    let html = '';
+
+    html += `
+    <li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link"
+           href="javascript:void(0)"
+           onclick="${
+               paginaActual > 0
+               ? `irPaginaTrabajadores(${paginaActual - 1})`
+               : ''
+           }">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+    </li>`;
+
+    for (let i = 0; i < totalPaginas; i++) {
+
+        html += `
+        <li class="page-item ${i === paginaActual ? 'active' : ''}">
+            <a class="page-link"
+               href="javascript:void(0)"
+               onclick="irPaginaTrabajadores(${i})">
+
+                ${i + 1}
+
+            </a>
+        </li>`;
+    }
+
+    html += `
+    <li class="page-item ${
+        paginaActual === totalPaginas - 1
+        ? 'disabled'
+        : ''
+    }">
+
+        <a class="page-link"
+           href="javascript:void(0)"
+           onclick="${
+               paginaActual < totalPaginas - 1
+               ? `irPaginaTrabajadores(${paginaActual + 1})`
+               : ''
+           }">
+
+            <i class="bi bi-chevron-right"></i>
+
+        </a>
+
+    </li>`;
+
+    nav.innerHTML = html;
+}
+
+function guardarTrabajador(event) {
+
+    event.preventDefault();
+
+    const form = document.getElementById('formTrabajador');
+
+    const formData = new FormData(form);
+
+    const esNuevo =
+        !document.getElementById('idTrabajador').value;
+
+    fetch('/trabajadores/guardar/ajax', {
+
+        method: 'POST',
+
+        body: new URLSearchParams(formData)
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        if (data.success) {
+
+            bootstrap.Modal.getInstance(
+                document.getElementById('modalTrabajador')
+            ).hide();
+
+            Swal.fire({
+
+                icon: 'success',
+
+                title: '¡Guardado!',
+
+                text: data.mensaje,
+
+                timer: 2000,
+
+                showConfirmButton: false
+
+            })
+
+            .then(() => {
+
+                const estado =
+                    document.getElementById(
+                        'filtroEstado'
+                    ).value;
+
+                const buscar =
+                    document.getElementById(
+                        'buscador'
+                    ).value;
+
+                filtrarTrabajadoresServidor(
+                    estado,
+                    0,
+                    buscar
+                );
+            });
+
+        } else {
+
+            Swal.fire({
+
+                icon: 'error',
+
+                title: 'Error',
+
+                text: data.mensaje
+
+            });
+        }
+
+    })
+
+    .catch(() => {
+
+        Swal.fire({
+
+            icon: 'error',
+
+            title: 'Error',
+
+            text: 'Error de conexión'
+
+        });
+
+    });
+}
