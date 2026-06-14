@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Trabajadores', ~{::section})}">
+<body>
+<section>
+
+	<!-- Encabezado -->
+	<div class="d-flex justify-content-between align-items-center mb-3">
+	    <div>
+	        <h4 class="fw-bold mb-0">
+	            <i class="bi bi-people-fill text-primary me-2"></i>Trabajadores
+	        </h4>
+	        <small class="text-muted">
+	            Gestión de guardias de seguridad
+	        </small>
+	    </div>
+
+	    <button class="btn btn-primary btn-sm"
+	            data-bs-toggle="modal"
+	            data-bs-target="#modalTrabajador"
+	            onclick="limpiarModalTrabajador()">
+
+	        <i class="bi bi-plus-circle me-1"></i>
+	        Nuevo Trabajador
+
+	    </button>
+	</div>
+
+    <!-- Filtro -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscador" class="form-control"
+                               placeholder="Buscar por nombre o DNI..."
+                               onkeyup="filtrarTablaTrabajadores()"/>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroEstado" class="form-select form-select-sm"
+                            onchange="filtrarDesdeSelectTrabajadores(this.value)">
+                        <option value="">Todos los estados</option>
+                        <option value="ACTIVO">Activo</option>
+                        <option value="CESADO">Cesado</option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <small class="text-muted">
+                        Página <strong th:text="${paginaActual + 1}"></strong>
+                        de <strong th:text="${totalPaginas}"></strong>
+                        — Total:
+                        <strong th:text="${paginado.totalElements}"></strong> registros
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<!-- Tabla -->
+	<table class="table table-hover mb-0" id="tablaTrabajadores">
+	    <thead class="table-header">
+	        <tr>
+	            <th>ID</th>
+	            <th>Nombre</th>
+	            <th>DNI</th>
+	            <th>Puesto</th>
+	            <th>Cliente</th>
+	            <th>Sede</th>
+	            <th>Estado</th>
+				<th>Acciones</th>
+	        </tr>
+	    </thead>
+
+	    <tbody>
+
+	        <tr th:each="t : ${trabajadores}">
+	            <td th:text="${t.idTrabajador}"></td>
+	            <td th:text="${t.nombreCompleto}"></td>
+	            <td th:text="${t.documentoIdentidad}"></td>
+	            <td th:text="${t.puesto}"></td>
+	            <td th:text="${t.cliente}"></td>
+	            <td th:text="${t.sede.nombre}"></td>
+
+				<td>
+				    <span th:if="${t.activoCesado == 'ACTIVO'}"
+				          class="badge bg-success">
+				        ACTIVO
+				    </span>
+
+				    <span th:if="${t.activoCesado == 'CESADO'}"
+				          class="badge bg-secondary">
+				        CESADO
+				    </span>
+				</td>
+
+				<td>
+				    <div class="acciones-btn">
+
+						<button class="btn btn-warning btn-sm"
+						        data-bs-toggle="modal"
+						        data-bs-target="#modalTrabajador"
+
+						        th:data-id="${t.idTrabajador}"
+						        th:data-nombre="${t.nombreCompleto}"
+						        th:data-dni="${t.documentoIdentidad}"
+						        th:data-puesto="${t.puesto}"
+						        th:data-cliente="${t.cliente}"
+						        th:data-sede="${t.sede.idSede}"
+						        th:data-fecha="${#dates.format(t.fechaIngreso,'yyyy-MM-dd')}"
+
+						        onclick="editarTrabajador(this)">
+
+						    <i class="bi bi-pencil"></i>
+
+						</button>
+
+				        <a href="javascript:void(0)"
+				           th:data-id="${t.idTrabajador}"
+				           th:data-estado="${t.activoCesado}"
+				           th:class="${t.activoCesado == 'ACTIVO'}
+				               ? 'btn btn-danger btn-sm'
+				               : 'btn btn-success btn-sm'"
+
+				           onclick="confirmarEstadoTrabajador(
+				               this.dataset.id,
+				               this.dataset.estado)">
+
+				            <i th:class="${t.activoCesado == 'ACTIVO'}
+				                ? 'bi bi-pause-circle'
+				                : 'bi bi-play-circle'">
+				            </i>
+
+				        </a>
+
+				    </div>
+				</td>
+				
+	        </tr>
+
+	        <tr th:if="${#lists.isEmpty(trabajadores)}">
+	            <td colspan="8" class="text-center text-muted py-4">
+	                No hay trabajadores registrados
+	            </td>
+	        </tr>
+
+	    </tbody>
+	</table>
+
+        <!-- Paginacion -->
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Mostrando <strong th:text="${trabajadores.size()}"></strong>
+                de <strong th:text="${paginado.totalElements}"></strong> registros
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item"
+                        th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0}
+                               ? 'irPaginaTrabajadores(' + ${paginaActual - 1} + ')'
+                               : ''">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(0, totalPaginas - 1)}"
+                        th:classappend="${i == paginaActual} ? 'active' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="'irPaginaTrabajadores(' + ${i} + ')'">
+                            <span th:text="${i + 1}"></span>
+                        </a>
+                    </li>
+                    <li class="page-item"
+                        th:classappend="${paginaActual == totalPaginas - 1}
+                            ? 'disabled' : ''">
+                        <a class="page-link" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1}
+                               ? 'irPaginaTrabajadores(' + ${paginaActual + 1} + ')'
+                               : ''">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    
+
+    <!-- Modal -->
+
+	<div class="modal fade" id="modalTrabajador" tabindex="-1">
+
+	    <div class="modal-dialog modal-lg">
+
+	        <div class="modal-content">
+
+	            <div class="modal-header modal-header-dark">
+
+	                <h5 class="modal-title" id="tituloModalTrabajador">
+	                    <i class="bi bi-people-fill me-2"></i>
+	                    Nuevo Trabajador
+	                </h5>
+
+	                <button type="button"
+	                        class="btn-close btn-close-white"
+	                        data-bs-dismiss="modal">
+	                </button>
+
+	            </div>
+
+	            <form id="formTrabajador"
+	                  onsubmit="guardarTrabajador(event)">
+
+	                <input type="hidden"
+	                       name="idTrabajador"
+	                       id="idTrabajador"/>
+
+	                <div class="modal-body">
+
+	                    <div class="row g-3">
+
+	                        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                Nombre Completo
+	                            </label>
+
+	                            <input type="text"
+	                                   class="form-control"
+	                                   name="nombreCompleto"
+	                                   id="inputNombre"
+	                                   required/>
+	                        </div>
+
+	                        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                DNI
+	                            </label>
+
+	                            <input type="text"
+	                                   class="form-control"
+	                                   name="documentoIdentidad"
+	                                   id="inputDni"
+	                                   required/>
+	                        </div>
+
+	                        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                Puesto
+	                            </label>
+
+	                            <input type="text"
+	                                   class="form-control"
+	                                   name="puesto"
+	                                   id="inputPuesto"
+	                                   placeholder="Ej: Agente de seguridad"/>
+	                        </div>
+
+	                        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                Cliente
+	                            </label>
+
+	                            <input type="text"
+	                                   class="form-control"
+	                                   name="cliente"
+	                                   id="inputCliente"
+	                                   placeholder="Empresa donde trabaja"/>
+	                        </div>
+
+	                        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                Sede
+	                            </label>
+
+	                            <select class="form-select"
+	                                    name="sede.idSede"
+	                                    id="selectSedeTrabajador"
+	                                    required>
+
+	                                <option value="">
+	                                    -- Seleccione --
+	                                </option>
+
+	                                <option th:each="s : ${sedes}"
+	                                        th:value="${s.idSede}"
+	                                        th:text="${s.nombre}">
+	                                </option>
+
+	                            </select>
+	                        </div>
+
+	                <!--        <div class="col-md-6">
+	                            <label class="form-label fw-semibold">
+	                                Fecha de ingreso
+	                            </label>
+
+	                            <input type="date"
+	                                   class="form-control"
+	                                   name="fechaIngreso"
+	                                   id="inputFechaIngreso"/>
+	                        </div>
+							-->
+
+	                    </div>
+
+	                </div>
+
+	                <div class="modal-footer">
+
+	                    <button type="button"
+	                            class="btn btn-secondary"
+	                            data-bs-dismiss="modal">
+	                        Cancelar
+	                    </button>
+
+	                    <button type="submit"
+	                            class="btn btn-primary">
+
+	                        <i class="bi bi-save me-1"></i>
+	                        Guardar
+	                    </button>
+	                </div>
+	            </form>
+	        </div>
+	    </div>
+	</div>
+
+</section>
+</body>
+</html>
