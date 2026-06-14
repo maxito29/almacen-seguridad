@@ -107,5 +107,24 @@ public class DashboardController {
         model.addAttribute("top5Stock",  mapper.writeValueAsString(top5Stock));
 
         return "dashboard";
+        
     }
+    
+    @GetMapping("/dashboard/stock/json")
+    @ResponseBody
+    public Map<String, Object> stockJson(
+            @RequestParam(defaultValue = "0") int page) {
+
+        Pageable pageable = PageRequest.of(page, 8,  
+            Sort.by("stockTotal").ascending());
+        Page<Producto> paginado = productoRepo.findAll(pageable);  
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("productos",     paginado.getContent());
+        result.put("totalPages",    paginado.getTotalPages());
+        result.put("totalElements", paginado.getTotalElements());
+        result.put("currentPage",   paginado.getNumber());
+        return result;
+    }
+    
 }

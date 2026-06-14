@@ -49,12 +49,11 @@
                     </select>
                 </div>
                 <div class="col-md-auto ms-auto">
-                    <small class="text-muted">
-                        Página <strong th:text="${paginaActual + 1}"></strong>
-                        de <strong th:text="${totalPaginas}"></strong>
-                        — Total:
-                        <strong th:text="${paginado.totalElements}"></strong> registros
-                    </small>
+					<small class="text-muted" id="textoPaginaFiltro">
+					    Página <strong th:text="${paginaActual + 1}"></strong>
+					    de <strong th:text="${totalPaginas}"></strong>
+					    — Total: <strong th:text="${paginado.totalElements}"></strong> registros
+					</small>
                 </div>
             </div>
         </div>
@@ -83,7 +82,9 @@
 	            <td th:text="${t.documentoIdentidad}"></td>
 	            <td th:text="${t.puesto}"></td>
 	            <td th:text="${t.cliente}"></td>
-	            <td th:text="${t.sede.nombre}"></td>
+				<td>
+				    <span class="badge bg-dark" th:text="${t.sede.nombre}"></span>
+				</td>
 
 				<td>
 				    <span th:if="${t.activoCesado == 'ACTIVO'}"
@@ -150,45 +151,47 @@
 	    </tbody>
 	</table>
 
-        <!-- Paginacion -->
-        <div class="card-footer d-flex justify-content-between align-items-center">
-            <small class="text-muted">
-                Mostrando <strong th:text="${trabajadores.size()}"></strong>
-                de <strong th:text="${paginado.totalElements}"></strong> registros
-            </small>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item"
-                        th:classappend="${paginaActual == 0} ? 'disabled' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="${paginaActual > 0}
-                               ? 'irPaginaTrabajadores(' + ${paginaActual - 1} + ')'
-                               : ''">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item"
-                        th:each="i : ${#numbers.sequence(0, totalPaginas - 1)}"
-                        th:classappend="${i == paginaActual} ? 'active' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="'irPaginaTrabajadores(' + ${i} + ')'">
-                            <span th:text="${i + 1}"></span>
-                        </a>
-                    </li>
-                    <li class="page-item"
-                        th:classappend="${paginaActual == totalPaginas - 1}
-                            ? 'disabled' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="${paginaActual < totalPaginas - 1}
-                               ? 'irPaginaTrabajadores(' + ${paginaActual + 1} + ')'
-                               : ''">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    
+	<div class="card-footer d-flex justify-content-between align-items-center">
+	    <small class="text-muted" id="textoMostrando">
+	        Mostrando <strong th:text="${trabajadores.size()}"></strong>
+	        de <strong th:text="${paginado.totalElements}"></strong> registros
+	    </small>
+	    <div class="d-flex flex-column align-items-center">
+	        <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1">
+	            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+	                <a class="page-link-circular" href="javascript:void(0)"
+	                   th:onclick="${paginaActual > 0} ? 'irPaginaTrabajadores(0)' : ''">«</a>
+	            </li>
+	            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+	                <a class="page-link-circular" href="javascript:void(0)"
+	                   th:onclick="${paginaActual > 0} ? 'irPaginaTrabajadores(' + ${paginaActual - 1} + ')' : ''">‹</a>
+	            </li>
+	            <li class="page-item"
+	                th:each="i : ${#numbers.sequence(
+	                    T(java.lang.Math).max(0, paginaActual - 2),
+	                    T(java.lang.Math).min(totalPaginas - 1, paginaActual + 2))}"
+	                th:classappend="${i == paginaActual} ? 'active' : ''">
+	                <a th:class="${i == paginaActual} ? 'page-link-circular active' : 'page-link-circular'"
+	                   href="javascript:void(0)"
+	                   th:onclick="'irPaginaTrabajadores(' + ${i} + ')'">
+	                    <span th:text="${i + 1}"></span>
+	                </a>
+	            </li>
+	            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+	                <a class="page-link-circular" href="javascript:void(0)"
+	                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaTrabajadores(' + ${paginaActual + 1} + ')' : ''">›</a>
+	            </li>
+	            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+	                <a class="page-link-circular" href="javascript:void(0)"
+	                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaTrabajadores(' + ${totalPaginas - 1} + ')' : ''">»</a>
+	            </li>
+	        </ul>
+	        <small class="text-muted" id="textoPaginaBottom">
+	            Página <strong th:text="${paginaActual + 1}"></strong>
+	            de <strong th:text="${totalPaginas}"></strong>
+	        </small>
+	    </div>
+	</div>
 
     <!-- Modal -->
 
@@ -235,17 +238,32 @@
 	                                   required/>
 	                        </div>
 
-	                        <div class="col-md-6">
-	                            <label class="form-label fw-semibold">
-	                                DNI
-	                            </label>
+							<div class="col-md-6">
+							    <label class="form-label fw-semibold">
+							        DNI
+							    </label>
 
-	                            <input type="text"
-	                                   class="form-control"
-	                                   name="documentoIdentidad"
-	                                   id="inputDni"
-	                                   required/>
-	                        </div>
+							    <div class="input-group">
+							        <input type="text"
+							               class="form-control"
+							               name="documentoIdentidad"
+							               id="inputDni"
+							               maxlength="8"
+							               pattern="[0-9]{8}"
+							               required/>
+
+							        <button type="button"
+							                class="btn btn-outline-primary"
+							                id="btnConsultarDni"
+							                onclick="consultarDniTrabajador()">
+							            <i class="bi bi-search me-1"></i>Consultar
+							        </button>
+							    </div>
+
+							    <div class="invalid-feedback">
+							        El DNI debe tener exactamente 8 dígitos
+							    </div>
+							</div>
 
 	                        <div class="col-md-6">
 	                            <label class="form-label fw-semibold">
@@ -292,8 +310,7 @@
 
 	                            </select>
 	                        </div>
-
-	                <!--        <div class="col-md-6">
+	                        <div class="col-md-6">
 	                            <label class="form-label fw-semibold">
 	                                Fecha de ingreso
 	                            </label>
@@ -303,9 +320,11 @@
 	                                   name="fechaIngreso"
 	                                   id="inputFechaIngreso"/>
 	                        </div>
-							-->
-
+							
+						
 	                    </div>
+						
+						<input type="hidden" name="activoCesado" id="inputActivoCesado"/>
 
 	                </div>
 

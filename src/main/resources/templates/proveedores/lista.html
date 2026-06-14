@@ -42,13 +42,11 @@
                     </select>
                 </div>
                 <div class="col-md-auto ms-auto">
-                    <small class="text-muted">
-                        Página <strong th:text="${paginaActual + 1}"></strong>
-                        de <strong th:text="${totalPaginas}"></strong>
-                        — Total:
-                        <strong th:text="${paginado.totalElements}"></strong>
-                        registros
-                    </small>
+					<small class="text-muted" id="textoPaginaFiltro">
+					    Página <strong th:text="${paginaActual + 1}"></strong>
+					    de <strong th:text="${totalPaginas}"></strong>
+					    — Total: <strong th:text="${paginado.totalElements}"></strong> registros
+					</small>
                 </div>
             </div>
         </div>
@@ -150,53 +148,48 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer d-flex justify-content-between
-                    align-items-center">
-            <small class="text-muted">
-                Mostrando
-                <strong th:text="${proveedores.size()}"></strong>
-                de
-                <strong th:text="${paginado.totalElements}"></strong>
-                registros
-            </small>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item"
-                        th:classappend="${paginaActual == 0}
-                            ? 'disabled' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="${paginaActual > 0}
-                               ? 'irPaginaProveedores('
-                                 + ${paginaActual - 1} + ')'
-                               : ''">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item"
-                        th:each="i : ${#numbers.sequence(
-                            0, totalPaginas - 1)}"
-                        th:classappend="${i == paginaActual}
-                            ? 'active' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="'irPaginaProveedores(' + ${i} + ')'">
-                            <span th:text="${i + 1}"></span>
-                        </a>
-                    </li>
-                    <li class="page-item"
-                        th:classappend="${paginaActual == totalPaginas - 1}
-                            ? 'disabled' : ''">
-                        <a class="page-link" href="javascript:void(0)"
-                           th:onclick="${paginaActual < totalPaginas - 1}
-                               ? 'irPaginaProveedores('
-                                 + ${paginaActual + 1} + ')'
-                               : ''">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </div>
+		
+		<div class="card-footer d-flex justify-content-between align-items-center">
+		    <small class="text-muted" id="textoMostrando">
+		        Mostrando <strong th:text="${proveedores.size()}"></strong>
+		        de <strong th:text="${paginado.totalElements}"></strong> registros
+		    </small>
+		    <div class="d-flex flex-column align-items-center">
+		        <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1">
+		            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+		                <a class="page-link-circular" href="javascript:void(0)"
+		                   th:onclick="${paginaActual > 0} ? 'irPaginaProveedores(0)' : ''">«</a>
+		            </li>
+		            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+		                <a class="page-link-circular" href="javascript:void(0)"
+		                   th:onclick="${paginaActual > 0} ? 'irPaginaProveedores(' + ${paginaActual - 1} + ')' : ''">‹</a>
+		            </li>
+		            <li class="page-item"
+		                th:each="i : ${#numbers.sequence(
+		                    T(java.lang.Math).max(0, paginaActual - 2),
+		                    T(java.lang.Math).min(totalPaginas - 1, paginaActual + 2))}"
+		                th:classappend="${i == paginaActual} ? 'active' : ''">
+		                <a th:class="${i == paginaActual} ? 'page-link-circular active' : 'page-link-circular'"
+		                   href="javascript:void(0)"
+		                   th:onclick="'irPaginaProveedores(' + ${i} + ')'">
+		                    <span th:text="${i + 1}"></span>
+		                </a>
+		            </li>
+		            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+		                <a class="page-link-circular" href="javascript:void(0)"
+		                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaProveedores(' + ${paginaActual + 1} + ')' : ''">›</a>
+		            </li>
+		            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+		                <a class="page-link-circular" href="javascript:void(0)"
+		                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaProveedores(' + ${totalPaginas - 1} + ')' : ''">»</a>
+		            </li>
+		        </ul>
+		        <small class="text-muted" id="textoPaginaBottom">
+		            Página <strong th:text="${paginaActual + 1}"></strong>
+		            de <strong th:text="${totalPaginas}"></strong>
+		        </small>
+		    </div>
+		</div>
 
     <!-- Modal -->
     <div class="modal fade" id="modalProveedor" tabindex="-1">

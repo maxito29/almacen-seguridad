@@ -20,17 +20,22 @@ public class TrabajadorService {
 
     // Guardar 
     public void guardar(Trabajador trabajador) {
-
         if (trabajador.getIdTrabajador() == null) {
+            // Solo al crear
             trabajador.setEstado(1);
-
             if (trabajador.getActivoCesado() == null ||
                 trabajador.getActivoCesado().isEmpty()) {
-
                 trabajador.setActivoCesado("ACTIVO");
             }
+        } else {
+            // Al editar — recuperar estado numérico del registro original
+            trabajadorRepo.findById(trabajador.getIdTrabajador())
+                .ifPresent(original -> {
+                    if (trabajador.getEstado() == null) {
+                        trabajador.setEstado(original.getEstado());
+                    }
+                });
         }
-
         trabajadorRepo.save(trabajador);
     }
 

@@ -101,35 +101,11 @@ function filtrarPorEstadoServidor(estado, pagina, buscar = '') {
 }
 
 function actualizarBotonesPaginacionFiltro(paginaActual, totalPaginas, estado) {
-    const nav = document.querySelector('.pagination');
-    if (!nav) return;
-
-    let html = '';
-
-    html += `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual > 0 ?
-               `filtrarPorEstadoServidor('${estado}', ${paginaActual - 1})` : ''}">
-            <i class="bi bi-chevron-left"></i>
-        </a>
-    </li>`;
-
-    for (let i = 0; i < totalPaginas; i++) {
-        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="javascript:void(0)"
-               onclick="filtrarPorEstadoServidor('${estado}', ${i})">${i + 1}</a>
-        </li>`;
-    }
-
-    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual < totalPaginas - 1 ?
-               `filtrarPorEstadoServidor('${estado}', ${paginaActual + 1})` : ''}">
-            <i class="bi bi-chevron-right"></i>
-        </a>
-    </li>`;
-
-    nav.innerHTML = html;
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas,
+        `(p) => filtrarPorEstadoServidor('${estado}', p)`
+    );
 }
 
 
@@ -350,24 +326,98 @@ function recargarTabla() {
     });
 }
 
-function actualizarPaginacion(paginaActual, totalPaginas, totalElements, mostrando) {
-    const textoMostrando = document.querySelector('.card-footer .text-muted');
-    if (textoMostrando) {
-        textoMostrando.innerHTML =
-            `Mostrando <strong>${mostrando || 0}</strong> de
-             <strong>${totalElements}</strong> registros`;
-    }
-
-    const textoPagina = document.querySelector('.col-md-auto .text-muted');
-    if (textoPagina) {
-        textoPagina.innerHTML =
-            `Página <strong>${paginaActual + 1}</strong> de
-             <strong>${totalPaginas}</strong> —
-             Total: <strong>${totalElements}</strong> registros`;
-    }
+function actualizarBotonesPaginacion(paginaActual, totalPaginas) {
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas, 'irPagina'
+    );
 }
 
 
+//PRODUCTOS
+
+function actualizarBotonesProductos(paginaActual, totalPaginas) {
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas, 'irPaginaProductos'
+    );
+}
+
+function actualizarPaginacionProductos(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPagina = document.getElementById('textoPaginaFiltro');
+    if (textoPagina)
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
+}
+
+function actualizarBotonesProductos(paginaActual, totalPaginas) {
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas, 'irPaginaProductos'
+    );
+}
+
+//PROVEEDORES
+
+function actualizarPaginacionProveedores(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPagina = document.getElementById('textoPaginaFiltro');
+    if (textoPagina)
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
+}
+
+function actualizarBotonesProveedores(paginaActual, totalPaginas) {
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas, 'irPaginaProveedores'
+    );
+}
+
+//TRABAJADORES
+
+function actualizarPaginacionTrabajadores(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPagina = document.getElementById('textoPaginaFiltro');
+    if (textoPagina)
+        textoPagina.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
+}
+
+function actualizarBotonesTrabajadores(paginaActual, totalPaginas) {
+    renderPaginacion(
+        document.querySelector('.pagination'),
+        paginaActual, totalPaginas, 'irPaginaTrabajadores'
+    );
+}
 
 
 function mostrarExito(mensaje) {
@@ -589,46 +639,81 @@ function irPagina(pagina) {
             </tr>`;
         });
 
-        actualizarPaginacion(pagina, data.totalPages,
-            data.totalElements, data.ingresos.length);
-        actualizarBotonesPaginacion(pagina, data.totalPages);
+		actualizarBotonesPaginacion(pagina, data.totalPages);
+		        actualizarPaginacion(          
+		            pagina,
+		            data.totalPages,
+		            data.totalElements,
+		            data.ingresos.length
+		        );
     });
 }
 
-function actualizarBotonesPaginacion(paginaActual, totalPaginas) {
-    const nav = document.querySelector('.pagination');
-    if (!nav) return;
 
-    let html = '';
-
-    html += `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual > 0 ? `irPagina(${paginaActual - 1})` : ''}">
-            <i class="bi bi-chevron-left"></i>
-        </a>
-    </li>`;
-
-    for (let i = 0; i < totalPaginas; i++) {
-        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="javascript:void(0)"
-               onclick="irPagina(${i})">${i + 1}</a>
-        </li>`;
-    }
-
-    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual < totalPaginas - 1 ? `irPagina(${paginaActual + 1})` : ''}">
-            <i class="bi bi-chevron-right"></i>
-        </a>
-    </li>`;
-
-    nav.innerHTML = html;
-}
 
 //DASHBOARD 
 
 function irPaginaDashboard(pagina) {
-    navegarAjax('/?page=' + pagina, true);
+    fetch(`/dashboard/stock/json?page=${pagina}`)
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('.table tbody');
+        tbody.innerHTML = '';
+
+        if (!data.productos || data.productos.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No hay productos registrados
+                </td></tr>`;
+        } else {
+            data.productos.forEach(p => {
+                let rowClass = '';
+                if (p.stockTotal === 0) rowClass = 'table-danger';
+                else if (p.stockTotal <= 3) rowClass = 'table-warning';
+
+                let estadoBadge = '';
+                if (p.stockTotal > 3)
+                    estadoBadge = '<span class="badge bg-success">Con Stock</span>';
+                else if (p.stockTotal > 0)
+                    estadoBadge = '<span class="badge bg-warning text-dark">Stock Bajo</span>';
+                else
+                    estadoBadge = '<span class="badge bg-danger">Sin Stock</span>';
+
+                const stockClass = p.stockTotal === 0 ? 'text-danger' : 'text-success';
+                const tipo = p.tipo ? p.tipo.nombre : '-';
+
+                tbody.innerHTML += `
+                <tr class="${rowClass}">
+                    <td>${p.idProducto}</td>
+                    <td>${p.descripcion}</td>
+                    <td><span class="badge bg-secondary">${tipo}</span></td>
+                    <td>S/ ${p.costoUnitario}</td>
+                    <td class="fw-bold ${stockClass}">${p.stockTotal}</td>
+                    <td>${estadoBadge}</td>
+                </tr>`;
+            });
+        }
+
+        const textoMostrando = document.getElementById('textoMostrando');
+        if (textoMostrando)
+            textoMostrando.innerHTML =
+                `Mostrando <strong>${data.productos?.length || 0}</strong> de <strong>${data.totalElements}</strong> productos`;
+
+        const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+        if (textoPaginaBottom)
+            textoPaginaBottom.innerHTML =
+                `Página <strong>${pagina + 1}</strong> de <strong>${data.totalPages}</strong>`;
+
+        renderPaginacion(
+            document.querySelector('.pagination'),
+            pagina, data.totalPages, 'irPaginaDashboard'
+        );
+
+        history.pushState({}, '', '/?page=' + pagina);
+    })
+    .catch(() => {
+        console.error('Error al cargar página del dashboard');
+    });
 }
 
 //PRODUCTOS JS
@@ -828,53 +913,8 @@ function irPaginaProductos(pagina) {
     filtrarProductosServidor('', pagina, '');
 }
 
-function actualizarPaginacionProductos(paginaActual, totalPaginas,
-                                        totalElements, mostrando) {
-    const textoMostrando = document.querySelector('.card-footer .text-muted');
-    if (textoMostrando) {
-        textoMostrando.innerHTML =
-            `Mostrando <strong>${mostrando || 0}</strong> de
-             <strong>${totalElements}</strong> registros`;
-    }
-    const textoPagina = document.querySelector('.col-md-auto .text-muted');
-    if (textoPagina) {
-        textoPagina.innerHTML =
-            `Página <strong>${paginaActual + 1}</strong> de
-             <strong>${totalPaginas}</strong> —
-             Total: <strong>${totalElements}</strong> registros`;
-    }
-}
 
-function actualizarBotonesProductos(paginaActual, totalPaginas,
-                                     estado = '', buscar = '') {
-    const nav = document.querySelector('.pagination');
-    if (!nav) return;
 
-    let html = `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual > 0
-               ? `filtrarProductosServidor('${estado}', ${paginaActual - 1}, '${buscar}')`
-               : ''}">
-            <i class="bi bi-chevron-left"></i>
-        </a></li>`;
-
-    for (let i = 0; i < totalPaginas; i++) {
-        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="javascript:void(0)"
-               onclick="filtrarProductosServidor('${estado}', ${i}, '${buscar}')">
-               ${i + 1}</a></li>`;
-    }
-
-    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual < totalPaginas - 1
-               ? `filtrarProductosServidor('${estado}', ${paginaActual + 1}, '${buscar}')`
-               : ''}">
-            <i class="bi bi-chevron-right"></i>
-        </a></li>`;
-
-    nav.innerHTML = html;
-}
 
 // trabajadores
 function filtrarTablaTrabajadores() {
@@ -943,11 +983,19 @@ function filtrarTrabajadoresServidor(estado, pagina, buscar = '') {
                     <td>${estadoBadge}</td>
                     <td>
                         <div class="acciones-btn">
-                            <button class="btn btn-warning btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalTrabajador">
-                                <i class="bi bi-pencil"></i>
-                            </button>
+						<button class="btn btn-warning btn-sm"
+						    data-bs-toggle="modal"
+						    data-bs-target="#modalTrabajador"
+						    data-id="${t.idTrabajador}"
+						    data-nombre="${t.nombreCompleto}"
+						    data-dni="${t.documentoIdentidad}"
+						    data-puesto="${t.puesto || ''}"
+						    data-cliente="${t.cliente || ''}"
+						    data-sede="${t.sede ? t.sede.idSede : ''}"
+						    data-fecha="${t.fechaIngreso ? t.fechaIngreso.split('T')[0] : ''}"
+						    onclick="editarTrabajador(this)">
+						    <i class="bi bi-pencil"></i>
+						</button>
                             ${btnEstado}
                         </div>
                     </td>
@@ -1011,6 +1059,7 @@ function limpiarModalTrabajador() {
 
 function editarTrabajador(btn) {
     const d = btn.dataset;
+	document.getElementById('inputActivoCesado').value = d.estado || 'ACTIVO';
     document.getElementById('tituloModalTrabajador').innerHTML =
         '<i class="bi bi-pencil me-2"></i>Editar Trabajador #' + d.id;
 
@@ -1030,54 +1079,6 @@ function irPaginaTrabajadores(pagina) {
     filtrarTrabajadoresServidor(estado, pagina, buscar);
 }
 
-function actualizarPaginacionTrabajadores(paginaActual, totalPaginas, totalElements, mostrando) {
-    const textoMostrando = document.querySelector('.card-footer .text-muted');
-    if (textoMostrando) {
-        textoMostrando.innerHTML =
-            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
-    }
-
-    const textoPagina = document.querySelector('.col-md-auto .text-muted');
-    if (textoPagina) {
-        textoPagina.innerHTML =
-            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
-    }
-}
-
-function actualizarBotonesTrabajadores(paginaActual, totalPaginas, estado = '', buscar = '') {
-    const nav = document.querySelector('.pagination');
-    if (!nav) return;
-
-    let html = '';
-
-    html += `
-    <li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual > 0 ? `irPaginaTrabajadores(${paginaActual - 1})` : ''}">
-            <i class="bi bi-chevron-left"></i>
-        </a>
-    </li>`;
-
-    for (let i = 0; i < totalPaginas; i++) {
-        html += `
-        <li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="javascript:void(0)"
-               onclick="irPaginaTrabajadores(${i})">
-                ${i + 1}
-            </a>
-        </li>`;
-    }
-
-    html += `
-    <li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual < totalPaginas - 1 ? `irPaginaTrabajadores(${paginaActual + 1})` : ''}">
-            <i class="bi bi-chevron-right"></i>
-        </a>
-    </li>`;
-
-    nav.innerHTML = html;
-}
 
 //PROVEEDORES
 
@@ -1334,54 +1335,16 @@ function irPaginaProveedores(pagina) {
     filtrarProveedoresServidor('', pagina, '');
 }
 
-function actualizarPaginacionProveedores(paginaActual, totalPaginas, totalElements, mostrando) {
-    const textoMostrando = document.querySelector('.card-footer .text-muted');
-    if (textoMostrando) {
-        textoMostrando.innerHTML =
-            `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
-    }
-    const textoPagina = document.querySelector('.col-md-auto .text-muted');
-    if (textoPagina) {
-        textoPagina.innerHTML =
-            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
-    }
-}
-
-function actualizarBotonesProveedores(paginaActual, totalPaginas, estado = '', buscar = '') {
-    const nav = document.querySelector('.pagination');
-    if (!nav) return;
-
-    let html = `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual > 0
-               ? `filtrarProveedoresServidor('${estado}', ${paginaActual - 1}, '${buscar}')`
-               : ''}">
-            <i class="bi bi-chevron-left"></i>
-        </a></li>`;
-
-    for (let i = 0; i < totalPaginas; i++) {
-        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="javascript:void(0)"
-               onclick="filtrarProveedoresServidor('${estado}', ${i}, '${buscar}')">
-               ${i + 1}</a></li>`;
-    }
-
-    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="javascript:void(0)"
-           onclick="${paginaActual < totalPaginas - 1
-               ? `filtrarProveedoresServidor('${estado}', ${paginaActual + 1}, '${buscar}')`
-               : ''}">
-            <i class="bi bi-chevron-right"></i>
-        </a></li>`;
-
-    nav.innerHTML = html;
-}
-
-
 function guardarTrabajador(event) {
     event.preventDefault();
 
     const form = document.getElementById('formTrabajador');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
     const formData = new FormData(form);
     const esNuevo = !document.getElementById('idTrabajador').value;
 
@@ -1408,19 +1371,11 @@ function guardarTrabajador(event) {
                 filtrarTrabajadoresServidor(estado, 0, buscar);
             });
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.mensaje
-            });
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
         }
     })
     .catch(() => {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Error de conexión'
-        });
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
     });
 }
 
@@ -1519,4 +1474,130 @@ function enviarMensajeChat() {
         input.disabled = false;
         btnEnviar.disabled = false;
     });
+}
+
+function consultarDniTrabajador() {
+    const dni = document.getElementById('inputDni').value.trim();
+
+    if (!dni || dni.length !== 8) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'DNI inválido',
+            text: 'El DNI debe tener exactamente 8 dígitos',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+
+    const btn = document.getElementById('btnConsultarDni');
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>...';
+    btn.disabled = true;
+
+    fetch('/api/dni/' + dni)
+    .then(res => res.json())
+    .then(data => {
+        btn.innerHTML = '<i class="bi bi-search me-1"></i>Consultar';
+        btn.disabled = false;
+
+        const nombreCompleto = [
+            data.nombres          || '',
+            data.apellidoPaterno  || '',
+            data.apellidoMaterno  || ''
+        ].filter(Boolean).join(' ').trim();
+
+        const campoNombre = document.getElementById('inputNombre');
+
+        if (data.error || !nombreCompleto) {
+            campoNombre.value = '';
+            campoNombre.focus();
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Persona no encontrada',
+                text: 'No se encontraron datos para este DNI. ' +
+                      'Por favor escribe el nombre manualmente.',
+                confirmButtonColor: '#1a1a2e'
+            });
+            return;
+        }
+
+        campoNombre.value = nombreCompleto;
+        campoNombre.style.backgroundColor = '#d1fae5';
+        setTimeout(() => campoNombre.style.backgroundColor = '', 1500);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'DNI encontrado',
+            text: nombreCompleto,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    })
+    .catch(() => {
+        btn.innerHTML = '<i class="bi bi-search me-1"></i>Consultar';
+        btn.disabled = false;
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo conectar con la API',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    });
+}
+
+function renderPaginacion(nav, paginaActual, totalPaginas, fnPagina) {
+    if (!nav) return;
+
+    const inicio = Math.max(0, paginaActual - 2);
+    const fin    = Math.min(totalPaginas - 1, paginaActual + 2);
+
+    let html = `
+    <li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link-circular" href="javascript:void(0)"
+           onclick="${paginaActual > 0 ? `${fnPagina}(0)` : ''}">«</a>
+    </li>
+    <li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link-circular" href="javascript:void(0)"
+           onclick="${paginaActual > 0 ? `${fnPagina}(${paginaActual - 1})` : ''}">‹</a>
+    </li>`;
+
+    for (let i = inicio; i <= fin; i++) {
+        html += `
+    <li class="page-item">
+        <a class="page-link-circular ${i === paginaActual ? 'active' : ''}"
+           href="javascript:void(0)"
+           onclick="${fnPagina}(${i})">${i + 1}</a>
+    </li>`;
+    }
+
+    html += `
+    <li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link-circular" href="javascript:void(0)"
+           onclick="${paginaActual < totalPaginas - 1 ? `${fnPagina}(${paginaActual + 1})` : ''}">›</a>
+    </li>
+    <li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link-circular" href="javascript:void(0)"
+           onclick="${paginaActual < totalPaginas - 1 ? `${fnPagina}(${totalPaginas - 1})` : ''}">»</a>
+    </li>`;
+
+    nav.innerHTML = html;
+}
+
+function actualizarPaginacion(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML =
+            `Mostrando <strong>${mostrando}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaFiltro = document.getElementById('textoPaginaFiltro');
+    if (textoPaginaFiltro)
+        textoPaginaFiltro.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML =
+            `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
 }

@@ -1,5 +1,6 @@
 package com.seguridad.controller;
 
+import com.seguridad.model.Sede;
 import com.seguridad.model.Trabajador;
 import com.seguridad.repository.SedeRepository;
 import com.seguridad.service.TrabajadorService;
@@ -43,22 +44,54 @@ public class TrabajadorController {
     @PostMapping("/guardar/ajax")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> guardarAjax(
-            @ModelAttribute Trabajador trabajador) {
-
+            @RequestParam Map<String, String> params) {
         Map<String, Object> response = new HashMap<>();
-
         try {
-            trabajadorService.guardar(trabajador);
+            Trabajador trabajador = new Trabajador();
 
+            // ID (para edición)
+            String idStr = params.get("idTrabajador");
+            if (idStr != null && !idStr.isBlank()) {
+                trabajador.setIdTrabajador(Integer.parseInt(idStr));
+            }
+
+            trabajador.setNombreCompleto(params.get("nombreCompleto"));
+            trabajador.setDocumentoIdentidad(params.get("documentoIdentidad"));
+            trabajador.setPuesto(params.get("puesto"));
+            trabajador.setCliente(params.get("cliente"));
+
+            // Sede — solo si viene un valor válido
+            String sedeId = params.get("sede.idSede");
+            if (sedeId != null && !sedeId.isBlank()) {
+                Sede sede = new Sede();
+                sede.setIdSede(Integer.parseInt(sedeId));
+                trabajador.setSede(sede);
+            }
+            
+         // Dentro de guardarAjax
+            String activoCesado = params.get("activoCesado");
+            if (activoCesado != null && !activoCesado.isBlank()) {
+                trabajador.setActivoCesado(activoCesado);
+            }
+
+            // Fecha de ingreso
+            String fechaStr = params.get("fechaIngreso");
+            if (fechaStr != null && !fechaStr.isBlank()) {
+                try {
+                    java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    trabajador.setFechaIngreso(sdf.parse(fechaStr));
+                } catch (Exception ignored) {}
+            }
+
+            trabajadorService.guardar(trabajador);
             response.put("success", true);
             response.put("mensaje", "Trabajador guardado correctamente");
 
         } catch (Exception e) {
-
             response.put("success", false);
             response.put("mensaje", "Error: " + e.getMessage());
         }
-
         return ResponseEntity.ok(response);
     }
 
