@@ -475,7 +475,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.getElementById('chartData')) {
         cargarScript('/js/dashboard.js');
-    }
+		
+		}
+		const divBienvenida = document.getElementById('divBienvenida');
+		if (divBienvenida) {
+		    const nombre = divBienvenida.dataset.nombre || 'Usuario';
+		    
+		    history.replaceState({}, '', '/');
+		    
+		    Swal.fire({
+		        icon: 'success',
+		        title: '¡Bienvenido!',
+		        text: nombre,
+		        timer: 2500,
+		        showConfirmButton: false
+		    });
+		}
 });
 
 function navegarAjax(url, pushState = true) {

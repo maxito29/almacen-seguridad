@@ -12,7 +12,6 @@
     const top5Labels  = JSON.parse(d.top5Labels  || '[]');
     const top5Stock   = JSON.parse(d.top5Stock   || '[]');
 
-    // Destruir graficos anteriores si existen
     ['graficoDona', 'graficoBarras', 'graficoTop5'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el._apexcharts) {
@@ -21,7 +20,6 @@
         }
     });
 
-    // ── Grafico 1: Dona ──────────────────────────────────────────
     const elDona = document.getElementById('graficoDona');
     if (elDona) {
         const chartDona = new ApexCharts(elDona, {
@@ -64,7 +62,6 @@
         elDona._apexcharts = chartDona;
     }
 
-    // ── Grafico 2: Barras ────────────────────────────────────────
     const elBarras = document.getElementById('graficoBarras');
     if (elBarras) {
         const chartBarras = new ApexCharts(elBarras, {
@@ -117,7 +114,6 @@
         elBarras._apexcharts = chartBarras;
     }
 
-    // ── Grafico 3: Top 5 horizontal ──────────────────────────────
     const elTop5 = document.getElementById('graficoTop5');
     if (elTop5) {
         const chartTop5 = new ApexCharts(elTop5, {

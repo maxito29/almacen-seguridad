@@ -11,6 +11,8 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import com.seguridad.security.CustomUserDetails;
 
 import java.util.*;
 
@@ -25,7 +27,9 @@ public class DashboardController {
 
     @GetMapping("/")
     public String dashboard(Model model,
-            @RequestParam(defaultValue = "0") int page) throws Exception {
+            @RequestParam(defaultValue = "0") int page,
+            Authentication authentication) throws Exception {
+    	
         Pageable pageable = PageRequest.of(page, 8,
             Sort.by("stockTotal").ascending());
         Page<Producto> paginado = productoRepo.findAll(pageable);
@@ -105,7 +109,11 @@ public class DashboardController {
         }
         model.addAttribute("top5Labels", mapper.writeValueAsString(top5Labels));
         model.addAttribute("top5Stock",  mapper.writeValueAsString(top5Stock));
-
+        
+        if (authentication != null) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            model.addAttribute("nombreUsuario", userDetails.getUsuario().getNombre()); // nombre real
+        }
         return "dashboard";
         
     }

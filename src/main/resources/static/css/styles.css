@@ -567,3 +567,9 @@ html, body {
     display: flex;
     gap: 2px;
 }
+
+.sidebar.collapsed .d-flex .nav-link {
+    flex-direction: column;
+    padding: 10px 4px;
+    gap: 3px;
+}
