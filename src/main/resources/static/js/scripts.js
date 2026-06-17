@@ -1601,3 +1601,203 @@ function actualizarPaginacion(paginaActual, totalPaginas, totalElements, mostran
         textoPaginaBottom.innerHTML =
             `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
 }
+
+
+// KARDEX
+function cargarKardex(pagina) {
+    const idProducto = document.getElementById('filtroProducto')?.value || '';
+    const idSede = document.getElementById('filtroSede')?.value || '';
+    const texto = document.getElementById('filtroTexto')?.value || '';
+    const page = pagina || 0;
+
+    let url = `/kardex/lista/json?page=${page}&size=10&sortBy=fecha&sortDir=desc`;
+    
+    if (idProducto && idProducto.trim() !== '') {
+        url += `&idProducto=${encodeURIComponent(idProducto.trim())}`;
+    }
+    if (idSede && idSede.trim() !== '') {
+        url += `&idSede=${encodeURIComponent(idSede.trim())}`;
+    }
+    if (texto && texto.trim() !== '') {
+        url += `&texto=${encodeURIComponent(texto.trim())}`;
+    }
+
+    console.log('📡 URL:', url);
+
+    fetch(url)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            renderizarTablaKardex(data);
+            renderizarPaginacionKardex(data, page);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const tbody = document.getElementById('tablaKardexBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar los datos: ${error.message}
+                        </td>
+                    </tr>`;
+            }
+            const totalRegistros = document.getElementById('totalRegistros');
+            if (totalRegistros) totalRegistros.textContent = '0 registros';
+        });
+}
+
+function renderizarTablaKardex(data) {
+    const content = data.content || [];
+    const tbody = document.getElementById('tablaKardexBody');
+
+    if (!tbody) return;
+
+    if (content.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                    No hay movimientos registrados
+                </td>
+            </tr>`;
+        const totalRegistros = document.getElementById('totalRegistros');
+        if (totalRegistros) totalRegistros.textContent = '0 registros';
+        return;
+    }
+
+    let html = '';
+    content.forEach(item => {
+        const fecha = new Date(item.fecha);
+        const fechaStr = formatFechaKardex(fecha);
+
+        let badgeTipo = '';
+        if (item.tipoMov === 'E' || item.tipoMov === 'e') {
+            badgeTipo = `<span class="badge-entrada"><i class="fas fa-arrow-down me-1"></i>E</span>`;
+        } else {
+            badgeTipo = `<span class="badge-salida"><i class="fas fa-arrow-up me-1"></i>S</span>`;
+        }
+
+        html += `
+            <tr>
+                <td>${fechaStr}</td>
+                <td>
+                    <span class="fw-semibold">${item.producto?.descripcion || 'N/A'}</span>
+                    <div class="codigo-producto">${item.producto?.idProducto || ''}</div>
+                </td>
+                <td><span class="badge-sede">${item.sede?.nombre || 'N/A'}</span></td>
+                <td>${badgeTipo}</td>
+                <td class="text-end">${item.cantidad || 0}</td>
+                <td class="text-end">S/ ${formatNumberKardex(item.costoUnit)}</td>
+                <td class="text-end">S/ ${formatNumberKardex(item.total)}</td>
+                <td class="text-end saldo-negrita">${item.saldoCant || 0}</td>
+                <td><span class="badge bg-light text-dark">${item.referencia || '-'}</span></td>
+            </tr>`;
+    });
+
+    tbody.innerHTML = html;
+    
+    const totalRegistros = document.getElementById('totalRegistros');
+    if (totalRegistros) {
+        totalRegistros.textContent = `${data.totalElements || 0} registros`;
+    }
+}
+
+function renderizarPaginacionKardex(data, paginaActual) {
+    const totalPaginas = data.totalPages || 0;
+    const currentPage = data.number || 0;
+    const totalElements = data.totalElements || 0;
+    const size = data.size || 10;
+
+    const desde = totalElements === 0 ? 0 : (currentPage * size) + 1;
+    const hasta = Math.min((currentPage + 1) * size, totalElements);
+    
+    const desdeEl = document.getElementById('desde');
+    const hastaEl = document.getElementById('hasta');
+    const totalEl = document.getElementById('total');
+    const paginaActualText = document.getElementById('paginaActualText');
+    const totalPaginasText = document.getElementById('totalPaginasText');
+    const textoMostrando = document.getElementById('textoMostrando');
+
+    if (desdeEl) desdeEl.textContent = desde;
+    if (hastaEl) hastaEl.textContent = hasta;
+    if (totalEl) totalEl.textContent = totalElements;
+    if (paginaActualText) paginaActualText.textContent = currentPage + 1;
+    if (totalPaginasText) totalPaginasText.textContent = totalPaginas || 1;
+    
+    if (textoMostrando) {
+        const mostrando = data.content?.length || 0;
+        textoMostrando.innerHTML = 
+            `Mostrando <strong>${mostrando}</strong> de <strong>${totalElements}</strong> registros`;
+    }
+
+    const nav = document.getElementById('paginacion');
+    if (!nav) return;
+
+    const inicio = Math.max(0, currentPage - 2);
+    const fin = Math.min(totalPaginas - 1, currentPage + 2);
+
+    let html = `
+        <li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
+            <a class="page-link-circular" href="javascript:void(0)" 
+               onclick="${currentPage > 0 ? `cargarKardex(0)` : ''}">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
+            <a class="page-link-circular" href="javascript:void(0)" 
+               onclick="${currentPage > 0 ? `cargarKardex(${currentPage - 1})` : ''}">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </li>`;
+
+    for (let i = inicio; i <= fin; i++) {
+        html += `
+            <li class="page-item">
+                <a class="page-link-circular ${i === currentPage ? 'active' : ''}" 
+                   href="javascript:void(0)" onclick="cargarKardex(${i})">
+                    ${i + 1}
+                </a>
+            </li>`;
+    }
+
+    html += `
+        <li class="page-item ${currentPage >= totalPaginas - 1 ? 'disabled' : ''}">
+            <a class="page-link-circular" href="javascript:void(0)" 
+               onclick="${currentPage < totalPaginas - 1 ? `cargarKardex(${currentPage + 1})` : ''}">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        </li>
+        <li class="page-item ${currentPage >= totalPaginas - 1 ? 'disabled' : ''}">
+            <a class="page-link-circular" href="javascript:void(0)" 
+               onclick="${currentPage < totalPaginas - 1 ? `cargarKardex(${totalPaginas - 1})` : ''}">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </li>`;
+
+    nav.innerHTML = html;
+}
+
+function formatFechaKardex(fecha) {
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = fecha.getFullYear();
+    const hh = String(fecha.getHours()).padStart(2, '0');
+    const min = String(fecha.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+}
+
+function formatNumberKardex(num) {
+    if (num === undefined || num === null) return '0.00';
+    return Number(num).toFixed(2);
+}
+
+
+
+
