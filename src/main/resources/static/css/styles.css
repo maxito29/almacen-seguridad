@@ -573,3 +573,8 @@ html, body {
     padding: 10px 4px;
     gap: 3px;
 }
+
+#nprogress .bar {
+    background: #f0a500 !important; 
+    height: 3px;
+}

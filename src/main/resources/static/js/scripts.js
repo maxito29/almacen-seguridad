@@ -494,6 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function navegarAjax(url, pushState = true) {
+    NProgress.start(); 
+    
     fetch(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
@@ -517,8 +519,10 @@ function navegarAjax(url, pushState = true) {
             }
             ejecutarScripts(document.getElementById('contenidoPrincipal'));
         }
+        NProgress.done(); 
     })
     .catch(() => {
+        NProgress.done(); 
         window.location.href = url;
     });
 }
