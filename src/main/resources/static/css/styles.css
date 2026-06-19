@@ -578,3 +578,48 @@ html, body {
     background: #f0a500 !important; 
     height: 3px;
 }
+
+
+/* ===== KARDEX ===== */
+.badge-entrada {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-salida {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-sede {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #1a1a2e;
+    color: #fff;
+}
+
+.codigo-producto {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.saldo-negrita {
+    font-weight: 700;
+    color: #1a1a2e;
+}

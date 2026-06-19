@@ -112,7 +112,7 @@ public class DashboardController {
         
         if (authentication != null) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            model.addAttribute("nombreUsuario", userDetails.getUsuario().getNombre()); // nombre real
+            model.addAttribute("nombreUsuario", userDetails.getUsuario().getNombre()); 
         }
         return "dashboard";
         

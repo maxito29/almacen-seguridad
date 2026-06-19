@@ -162,19 +162,16 @@
 		    <div class="d-flex flex-column align-items-center">
 		        <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1">
 
-		            <!-- Primera página -->
 		            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
 		                <a class="page-link-circular" href="javascript:void(0)"
 		                   th:onclick="${paginaActual > 0} ? 'irPagina(0)' : ''">«</a>
 		            </li>
 
-		            <!-- Anterior -->
 		            <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
 		                <a class="page-link-circular" href="javascript:void(0)"
 		                   th:onclick="${paginaActual > 0} ? 'irPagina(' + ${paginaActual - 1} + ')' : ''">‹</a>
 		            </li>
 
-		            <!-- Páginas numeradas (máximo 5 alrededor de la actual) -->
 		            <li class="page-item"
 		                th:each="i : ${#numbers.sequence(
 		                    T(java.lang.Math).max(0, paginaActual - 2),
@@ -189,13 +186,11 @@
 		                </a>
 		            </li>
 
-		            <!-- Siguiente -->
 		            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
 		                <a class="page-link-circular" href="javascript:void(0)"
 		                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPagina(' + ${paginaActual + 1} + ')' : ''">›</a>
 		            </li>
 
-		            <!-- Última página -->
 		            <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
 		                <a class="page-link-circular" href="javascript:void(0)"
 		                   th:onclick="${paginaActual < totalPaginas - 1} ? 'irPagina(' + ${totalPaginas - 1} + ')' : ''">»</a>

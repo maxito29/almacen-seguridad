@@ -1182,7 +1182,7 @@ function filtrarProveedoresServidor(estado, pagina, buscar = '') {
                             data-estado="${p.estado}"
                             onclick="editarProveedor(this)">
                             <i class="bi bi-pencil"></i>
-                        </button>
+                        </button>	
                         ${btnEstado}
                     </div>
                 </td>
@@ -1623,19 +1623,24 @@ function actualizarPaginacion(paginaActual, totalPaginas, totalElements, mostran
 
 
 // KARDEX
+
 function cargarKardex(pagina) {
     const idProducto = document.getElementById('filtroProducto')?.value || '';
     const idSede = document.getElementById('filtroSede')?.value || '';
+    const tipoMov = document.getElementById('filtroTipoMov')?.value || '';
     const texto = document.getElementById('filtroTexto')?.value || '';
     const page = pagina || 0;
 
     let url = `/kardex/lista/json?page=${page}&size=10&sortBy=fecha&sortDir=desc`;
-    
+
     if (idProducto && idProducto.trim() !== '') {
         url += `&idProducto=${encodeURIComponent(idProducto.trim())}`;
     }
     if (idSede && idSede.trim() !== '') {
         url += `&idSede=${encodeURIComponent(idSede.trim())}`;
+    }
+    if (tipoMov && tipoMov.trim() !== '') {
+        url += `&tipoMov=${encodeURIComponent(tipoMov.trim())}`;
     }
     if (texto && texto.trim() !== '') {
         url += `&texto=${encodeURIComponent(texto.trim())}`;

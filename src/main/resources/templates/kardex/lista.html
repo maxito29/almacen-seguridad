@@ -17,12 +17,13 @@
         </span>
     </div>
 
-    <!-- filtro -->
+    <!-- filtros: 4 columnas iguales de col-md-3 = 12/12 -->
     <div class="card shadow-sm mb-3">
         <div class="card-body py-2">
             <div class="row g-2 align-items-center">
-                <!-- seleccion de productos -->
-                <div class="col-md-4">
+
+                <!-- producto -->
+                <div class="col-md-3">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">
                             <i class="fas fa-cube"></i>
@@ -30,15 +31,15 @@
                         <select id="filtroProducto" class="form-select form-select-sm"
                                 onchange="cargarKardex(0)">
                             <option value="">Todos los productos</option>
-                            <option th:each="p : ${productos}" 
-                                    th:value="${p.idProducto}" 
+                            <option th:each="p : ${productos}"
+                                    th:value="${p.idProducto}"
                                     th:text="${p.descripcion + ' (' + p.idProducto + ')'}">
                             </option>
                         </select>
                     </div>
                 </div>
 
-                <!-- selecion de sede -->
+                <!-- sede -->
                 <div class="col-md-3">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">
@@ -47,31 +48,41 @@
                         <select id="filtroSede" class="form-select form-select-sm"
                                 onchange="cargarKardex(0)">
                             <option value="">Todas las sedes</option>
-                            <option th:each="s : ${sedes}" 
-                                    th:value="${s.idSede}" 
+                            <option th:each="s : ${sedes}"
+                                    th:value="${s.idSede}"
                                     th:text="${s.nombre}">
                             </option>
                         </select>
                     </div>
                 </div>
 
-                <!-- buscra x texto -->
+                <!-- tipo de movimiento -->
+                <div class="col-md-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">
+                            <i class="fas fa-right-left"></i>
+                        </span>
+                        <select id="filtroTipoMov" class="form-select form-select-sm"
+                                onchange="cargarKardex(0)">
+                            <option value="">Todos los movimientos</option>
+                            <option value="E">Solo entradas</option>
+                            <option value="S">Solo salidas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- texto -->
                 <div class="col-md-3">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">
                             <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" id="filtroTexto" class="form-control" 
-                               placeholder="Buscar por producto o referencia..."
-                               onkeyup="if(event.key === 'Enter') cargarKardex(0)">
+                        <input type="text" id="filtroTexto" class="form-control"
+                               placeholder="Buscar producto o referencia..."
+                               onkeyup="cargarKardex(0)">
                     </div>
                 </div>
-               
-                <div class="col-md-2">
-                    <button class="btn btn-primary btn-sm w-100" onclick="cargarKardex(0)">
-                        <i class="fas fa-search me-1"></i>Buscar
-                    </button>
-                </div>
+
             </div>
         </div>
     </div>
@@ -114,28 +125,30 @@
         <!-- paginacion -->
         <div class="card-footer d-flex justify-content-between align-items-center">
             <small class="text-muted" id="textoMostrando">
-                Mostrando <strong id="desde">0</strong> - <strong id="hasta">0</strong> 
+                Mostrando <strong id="desde">0</strong> - <strong id="hasta">0</strong>
                 de <strong id="total">0</strong> registros
             </small>
             <div class="d-flex flex-column align-items-center">
                 <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1" id="paginacion">
-
                 </ul>
                 <small class="text-muted" id="textoPaginaBottom">
-                    Página <strong id="paginaActualText">1</strong> 
+                    Página <strong id="paginaActualText">1</strong>
                     de <strong id="totalPaginasText">1</strong>
                 </small>
             </div>
         </div>
     </div>
 
+    <script>
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                cargarKardex(0);
+            });
+        } else {
+            cargarKardex(0);
+        }
+    </script>
+
 </section>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        cargarKardex(0);
-    });
-</script>
-
 </body>
 </html>

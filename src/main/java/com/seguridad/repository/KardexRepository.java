@@ -35,17 +35,20 @@ public interface KardexRepository extends JpaRepository<Kardex, Integer> {
 Page<Kardex> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
 // para buscar con filtros
+//=== KardexRepository.java ===
+
 @Query("SELECT k FROM Kardex k WHERE " +
-     "(:idProducto IS NULL OR k.producto.idProducto = :idProducto) AND " +
-     "(:idSede IS NULL OR k.sede.idSede = :idSede) AND " +
-     "(:texto IS NULL OR LOWER(k.referencia) LIKE LOWER(CONCAT('%', :texto, '%')) OR " +
-     "LOWER(k.producto.descripcion) LIKE LOWER(CONCAT('%', :texto, '%')))")
+  "(:idProducto IS NULL OR k.producto.idProducto = :idProducto) AND " +
+  "(:idSede IS NULL OR k.sede.idSede = :idSede) AND " +
+  "(:tipoMov IS NULL OR k.tipoMov = :tipoMov) AND " +
+  "(:texto IS NULL OR " +
+  "   LOWER(k.referencia) LIKE LOWER(CONCAT('%', :texto, '%')) OR " +
+  "   LOWER(k.producto.descripcion) LIKE LOWER(CONCAT('%', :texto, '%')))")
 Page<Kardex> filtrarKardex(@Param("idProducto") String idProducto,
-                         @Param("idSede") Integer idSede,
-                         @Param("texto") String texto,
-                         Pageable pageable);
- 
- 
- 
+                      @Param("idSede") Integer idSede,
+                      @Param("tipoMov") String tipoMov,
+                      @Param("texto") String texto,
+                      Pageable pageable);
+
  
 }
