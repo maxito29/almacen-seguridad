@@ -38,7 +38,7 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: none; 
+    scrollbar-width: none;
 }
 
 .sidebar > ul.nav::-webkit-scrollbar {
@@ -70,9 +70,18 @@ body {
 
 .sidebar-toggle-wrapper {
     flex-shrink: 0;
-    margin-top: auto;  
-    padding: 8px 0;
+    padding: 4px 0;        
     border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 4px;       
+}
+
+#btnToggleBottom {
+    width: 28px;              
+    height: 28px;
+}
+
+#iconToggleBottom {
+    font-size: 0.9rem !important;  
 }
 
 .sidebar.collapsed .nav-text {
@@ -83,6 +92,10 @@ body {
     text-align: center;
     white-space: normal;  
     overflow: visible;
+}
+
+.sidebar-version {
+    padding: 2px 0 6px;      
 }
 
 .sidebar .sidebar-version {
@@ -103,15 +116,16 @@ body {
 
 .sidebar .nav-link {
     color: #adb5bd;
-    padding: 10px 12px;
+    padding: 7px 12px;       
     border-radius: 8px;
-    margin: 2px 8px;
+    margin: 1px 8px;         
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;                
     white-space: nowrap;
-    position: relative; 
+    position: relative;
+    font-size: 13.5px;       
 }
 
 
@@ -122,16 +136,21 @@ body {
 }
 
 .sidebar-brand-wrapper {
-    padding-bottom: 12px;
-    margin-bottom: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar .d-flex.justify-content-center.py-2 form button {
+    padding: 7px 12px !important; 
+    font-size: 13.5px;
 }
 
 .brand-link {
     color: #f0a500 !important;
     font-weight: bold;
-    font-size: 1.0rem;
-    padding: 10px 12px;
+	padding: 7px 12px;       
+	font-size: 0.95rem; 
     border-radius: 8px;
     margin: 2px 8px;
     display: flex;
@@ -234,7 +253,9 @@ html, body {
 .main-content {
     margin-left: 240px;
     width: calc(100% - 240px);
-    min-height: 100vh;
+    height: 100vh;            
+    overflow-y: auto;         
+    overflow-x: hidden;
 }
 
 .main-content.expanded {
@@ -296,9 +317,13 @@ html, body {
 }
 
 .sidebar .nav-link i {
-    font-size: 1.1rem;
-    min-width: 20px;
+    font-size: 1rem;         
+    min-width: 18px;
     text-align: center;
+}
+
+.sidebar ul.nav {
+    gap: 0 !important;       
 }
 
 .table-responsive {
@@ -623,3 +648,49 @@ html, body {
     font-weight: 700;
     color: #1a1a2e;
 }
+
+.usuario-topbar {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+}
+
+.usuario-topbar:hover {
+    background-color: #f8f9fa;
+}
+
+.usuario-topbar::after {
+    display: none; 
+}
+
+.dropdown-menu {
+    border: none;
+    border-radius: 10px;
+    min-width: 200px;
+    padding: 6px;
+}
+
+.dropdown-item {
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.dropdown-item:active {
+    background-color: #f8f9fa;
+    color: inherit;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #fee2e2;
+    color: #dc3545 !important;
+}
+
+@keyframes pulseRed {
+    0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.7); }
+    70%  { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+    100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+}
+
+

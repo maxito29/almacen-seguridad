@@ -837,7 +837,11 @@ function limpiarModalProducto() {
         if (el) el.value = '';
     });
     const stock = document.getElementById('inputStock');
-    if (stock) stock.value = '0';
+    if (stock) {
+        stock.value = '0';
+		stock.disabled = true; 
+        stock.readOnly = false;   
+    }
     const idInput = document.getElementById('inputIdProducto');
     if (idInput) idInput.disabled = false;
 }
@@ -854,6 +858,8 @@ function editarProducto(btn) {
     document.getElementById('inputCostoProducto').value   = d.costo;
     document.getElementById('inputVenta').value           = d.venta;
     document.getElementById('inputStock').value           = d.stock;
+	document.getElementById('inputStock').disabled        = false;
+	document.getElementById('inputStock').readOnly        = true;  
     document.getElementById('inputEstadoProducto').value  = d.estado;
 }
 
@@ -1823,5 +1829,562 @@ function formatNumberKardex(num) {
 }
 
 
+// USUARIOS
 
+function filtrarTablaUsuarios() {
+    const texto  = document.getElementById('buscador').value;
+    const estado = document.getElementById('filtroEstado').value;
+    filtrarUsuariosServidor(estado, 0, texto);
+}
+
+function filtrarDesdeSelectUsuarios(estado) {
+    const texto = document.getElementById('buscador').value;
+    filtrarUsuariosServidor(estado, 0, texto);
+}
+
+function filtrarUsuariosServidor(estado, pagina, buscar = '') {
+    fetch(`/usuarios/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('#tablaUsuarios tbody');
+        tbody.innerHTML = '';
+
+        if (!data.usuarios || data.usuarios.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    No hay usuarios registrados
+                </td></tr>`;
+            actualizarPaginacionUsuarios(pagina, 0, 0, 0);
+            return;
+        }
+
+        data.usuarios.forEach(u => {
+            const estadoBadge = u.estado === 1
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-secondary">Suspendido</span>';
+
+            const rolBadge = u.rol === 'ADMIN'
+                ? '<span class="badge bg-warning text-dark">ADMIN</span>'
+                : '<span class="badge bg-secondary">ALMACEN</span>';
+
+            const btnEstado = u.estado === 1
+                ? `<a href="javascript:void(0)"
+                      data-url="/usuarios/estado/${u.idUsuario}"
+                      data-estado="${u.estado}"
+                      class="btn btn-danger btn-sm"
+                      onclick="confirmarEstadoUsuario(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-pause-circle"></i></a>`
+                : `<a href="javascript:void(0)"
+                      data-url="/usuarios/estado/${u.idUsuario}"
+                      data-estado="${u.estado}"
+                      class="btn btn-success btn-sm"
+                      onclick="confirmarEstadoUsuario(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-play-circle"></i></a>`;
+
+            const sede = u.sede ? u.sede.nombre : '-';
+
+			tbody.innerHTML += `
+			<tr class="${u.estado === 2 ? 'table-secondary' : ''}">
+			    <td>${u.idUsuario}</td>
+			    <td><span class="fw-semibold text-primary">${u.username}</span></td>
+			    <td>${u.nombre}</td>
+			    <td>${rolBadge}</td>
+			    <td>${sede}</td>
+			    <td>${estadoBadge}</td>
+			    <td>${u.email || '-'}</td>
+			    <td>
+			        <div class="acciones-btn">
+			            <button class="btn btn-warning btn-sm"
+			                data-bs-toggle="modal"
+			                data-bs-target="#modalUsuario"
+			                data-id="${u.idUsuario}"
+			                data-username="${u.username}"
+			                data-nombre="${u.nombre}"
+			                data-rol="${u.rol}"
+			                data-sede="${u.sede ? u.sede.idSede : ''}"
+			                data-estado="${u.estado}"
+			                data-email="${u.email || ''}"
+			                onclick="editarUsuario(this)">
+			                <i class="bi bi-pencil"></i>
+			            </button>
+			            ${btnEstado}
+			        </div>
+			    </td>
+			</tr>`;
+        });
+
+        actualizarPaginacionUsuarios(pagina, data.totalPages, data.totalElements, data.usuarios.length);
+        actualizarBotonesUsuarios(pagina, data.totalPages);
+    });
+}
+
+function actualizarPaginacionUsuarios(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML = `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPagina = document.getElementById('textoPaginaFiltro');
+    if (textoPagina)
+        textoPagina.innerHTML = `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML = `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
+}
+
+function actualizarBotonesUsuarios(paginaActual, totalPaginas) {
+    renderPaginacion(document.querySelector('.pagination'), paginaActual, totalPaginas, 'irPaginaUsuarios');
+}
+
+function irPaginaUsuarios(pagina) {
+    history.pushState({}, '', '/usuarios?page=' + pagina);
+    const estado = document.getElementById('filtroEstado')?.value || '';
+    const buscar = document.getElementById('buscador')?.value || '';
+    filtrarUsuariosServidor(estado, pagina, buscar);
+}
+
+function recargarTablaUsuarios() {
+    const urlParams    = new URLSearchParams(window.location.search);
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+    irPaginaUsuarios(paginaActual);
+}
+
+function toggleSedeUsuario() {
+    const rol    = document.getElementById('selectRolUsuario').value;
+    const bloque = document.getElementById('bloqueSedeUsuario');
+    const select = document.getElementById('selectSedeUsuario');
+
+    if (rol === 'ALMACEN') {
+        bloque.style.display = '';
+        select.disabled = false;
+        select.required = true;
+    } else {
+        bloque.style.display = 'none';
+        select.disabled = true;   // 👈 así no se envía idSede cuando es ADMIN
+        select.required = false;
+        select.value = '';
+    }
+}
+
+function toggleVerPasswordUsuario() {
+    const input = document.getElementById('inputPasswordUsuario');
+    const icon  = document.getElementById('iconVerPasswordUsuario');
+    const seVaAMostrar = input.type === 'password';
+    input.type = seVaAMostrar ? 'text' : 'password';
+    icon.classList.toggle('bi-eye-slash', !seVaAMostrar);
+    icon.classList.toggle('bi-eye', seVaAMostrar);
+}
+
+function limpiarModalUsuario() {
+    document.getElementById('tituloModalUsuario').innerHTML =
+        '<i class="bi bi-person-gear me-2"></i>Nuevo Usuario';
+    ['idUsuario','inputUsername','inputNombreUsuario',
+     'inputPasswordUsuario','inputEstadoUsuario'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('inputPasswordUsuario').required = true;
+    document.getElementById('hintPassword').textContent = '';
+    document.getElementById('selectRolUsuario').value = 'ADMIN';
+    toggleSedeUsuario();
+}
+
+function editarUsuario(btn) {
+    const d = btn.dataset;
+    document.getElementById('tituloModalUsuario').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Usuario ' + d.username;
+    document.getElementById('idUsuario').value             = d.id;
+    document.getElementById('inputUsername').value         = d.username;
+    document.getElementById('inputNombreUsuario').value    = d.nombre;
+    document.getElementById('inputPasswordUsuario').value  = '';
+    document.getElementById('inputPasswordUsuario').required = false;
+    document.getElementById('hintPassword').textContent    = '(deja en blanco para no cambiarla)';
+    document.getElementById('inputEstadoUsuario').value    = d.estado;
+    document.getElementById('selectRolUsuario').value      = d.rol;
+	document.getElementById('inputEmailUsuario').value = d.email || '';
+    toggleSedeUsuario();
+    if (d.sede) document.getElementById('selectSedeUsuario').value = d.sede;
+}
+
+function guardarUsuario(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('formUsuario'));
+
+    fetch('/usuarios/guardar/ajax', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+            Swal.fire({
+                icon: 'success', title: '¡Guardado!',
+                text: data.mensaje, timer: 2000,
+                showConfirmButton: false
+            }).then(() => recargarTablaUsuarios());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+        }
+    })
+    .catch(() => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
+    });
+}
+
+function confirmarEstadoUsuario(url, estadoActual) {
+    const esActivo = estadoActual == 1;
+    const id = url.split('/').pop();
+
+    Swal.fire({
+        title: esActivo ? '¿Suspender usuario?' : '¿Activar usuario?',
+        text: esActivo
+            ? 'El usuario no podrá iniciar sesión'
+            : 'El usuario podrá volver a iniciar sesión',
+        icon: esActivo ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esActivo ? 'Sí, suspender' : 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/usuarios/estado/ajax/' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Actualizado',
+                        text: data.mensaje, timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => recargarTablaUsuarios());
+                }
+            });
+        }
+    });
+}
+
+
+// SEDES
+
+function filtrarTablaSedes() {
+    const texto  = document.getElementById('buscador').value;
+    const estado = document.getElementById('filtroEstado').value;
+    filtrarSedesServidor(estado, 0, texto);
+}
+
+function filtrarDesdeSelectSedes(estado) {
+    const texto = document.getElementById('buscador').value;
+    filtrarSedesServidor(estado, 0, texto);
+}
+
+function filtrarSedesServidor(estado, pagina, buscar = '') {
+    fetch(`/sedes/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('#tablaSedes tbody');
+        tbody.innerHTML = '';
+
+        if (!data.sedes || data.sedes.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No hay sedes registradas
+                </td></tr>`;
+            actualizarPaginacionSedes(pagina, 0, 0, 0);
+            return;
+        }
+
+        data.sedes.forEach(s => {
+            const estadoBadge = s.estado === 1
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-secondary">Suspendido</span>';
+
+            const btnEstado = s.estado === 1
+                ? `<a href="javascript:void(0)"
+                      data-url="/sedes/estado/${s.idSede}"
+                      data-estado="${s.estado}"
+                      class="btn btn-danger btn-sm"
+                      onclick="confirmarEstadoSede(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-pause-circle"></i></a>`
+                : `<a href="javascript:void(0)"
+                      data-url="/sedes/estado/${s.idSede}"
+                      data-estado="${s.estado}"
+                      class="btn btn-success btn-sm"
+                      onclick="confirmarEstadoSede(this.dataset.url, this.dataset.estado)">
+                      <i class="bi bi-play-circle"></i></a>`;
+
+            tbody.innerHTML += `
+            <tr class="${s.estado === 2 ? 'table-secondary' : ''}">
+                <td>${s.idSede}</td>
+                <td><span class="badge bg-dark">${s.codigo}</span></td>
+                <td class="fw-semibold">${s.nombre}</td>
+                <td>${s.direccion || '-'}</td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <div class="acciones-btn">
+                        <button class="btn btn-warning btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSede"
+                            data-id="${s.idSede}"
+                            data-codigo="${s.codigo}"
+                            data-nombre="${s.nombre}"
+                            data-direccion="${s.direccion || ''}"
+                            data-estado="${s.estado}"
+                            onclick="editarSede(this)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${btnEstado}
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        actualizarPaginacionSedes(pagina, data.totalPages, data.totalElements, data.sedes.length);
+        actualizarBotonesSedes(pagina, data.totalPages);
+    });
+}
+
+function actualizarPaginacionSedes(paginaActual, totalPaginas, totalElements, mostrando) {
+    const textoMostrando = document.getElementById('textoMostrando');
+    if (textoMostrando)
+        textoMostrando.innerHTML = `Mostrando <strong>${mostrando || 0}</strong> de <strong>${totalElements}</strong> registros`;
+
+    const textoPagina = document.getElementById('textoPaginaFiltro');
+    if (textoPagina)
+        textoPagina.innerHTML = `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong> — Total: <strong>${totalElements}</strong> registros`;
+
+    const textoPaginaBottom = document.getElementById('textoPaginaBottom');
+    if (textoPaginaBottom)
+        textoPaginaBottom.innerHTML = `Página <strong>${paginaActual + 1}</strong> de <strong>${totalPaginas}</strong>`;
+}
+
+function actualizarBotonesSedes(paginaActual, totalPaginas) {
+    renderPaginacion(document.querySelector('.pagination'), paginaActual, totalPaginas, 'irPaginaSedes');
+}
+
+function irPaginaSedes(pagina) {
+    history.pushState({}, '', '/sedes?page=' + pagina);
+    const estado = document.getElementById('filtroEstado')?.value || '';
+    const buscar = document.getElementById('buscador')?.value || '';
+    filtrarSedesServidor(estado, pagina, buscar);
+}
+
+function recargarTablaSedes() {
+    const urlParams    = new URLSearchParams(window.location.search);
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+    irPaginaSedes(paginaActual);
+}
+
+function limpiarModalSede() {
+    document.getElementById('tituloModalSede').innerHTML =
+        '<i class="bi bi-building me-2"></i>Nueva Sede';
+    ['idSede','inputCodigoSede','inputNombreSede',
+     'inputDireccionSede','inputEstadoSede'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+function editarSede(btn) {
+    const d = btn.dataset;
+    document.getElementById('tituloModalSede').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Sede ' + d.nombre;
+    document.getElementById('idSede').value             = d.id;
+    document.getElementById('inputCodigoSede').value     = d.codigo;
+    document.getElementById('inputNombreSede').value     = d.nombre;
+    document.getElementById('inputDireccionSede').value  = d.direccion;
+    document.getElementById('inputEstadoSede').value     = d.estado;
+}
+
+function guardarSede(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('formSede'));
+
+    fetch('/sedes/guardar/ajax', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalSede')).hide();
+            Swal.fire({
+                icon: 'success', title: '¡Guardado!',
+                text: data.mensaje, timer: 2000,
+                showConfirmButton: false
+            }).then(() => recargarTablaSedes());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+        }
+    })
+    .catch(() => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
+    });
+}
+
+function confirmarEstadoSede(url, estadoActual) {
+    const esActivo = estadoActual == 1;
+    const id = url.split('/').pop();
+
+    Swal.fire({
+        title: esActivo ? '¿Suspender sede?' : '¿Activar sede?',
+        text: esActivo
+            ? 'La sede dejará de aparecer como opción activa'
+            : 'La sede volverá a estar disponible',
+        icon: esActivo ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esActivo ? 'Sí, suspender' : 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/sedes/estado/ajax/' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Actualizado',
+                        text: data.mensaje, timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => recargarTablaSedes());
+                }
+            });
+        }
+    });
+}
+
+function dispararAlertaStock() {
+    Swal.fire({
+        title: '¿Enviar alertas de stock bajo?',
+        text: 'Se enviará un correo a cada ALMACEN con stock crítico en su sede, y a los ADMIN con el resumen global.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f0a500',
+        confirmButtonText: 'Sí, enviar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/dashboard/alerta-stock/ajax', { 
+                method: 'POST',
+                credentials: 'same-origin'  
+            })
+            .then(res => res.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.success ? 'success' : 'error',
+                    title: data.success ? 'Enviado' : 'Error',
+                    text: data.mensaje,
+                    timer: data.success ? 2000 : undefined,
+                    showConfirmButton: !data.success
+                });
+            })
+            .catch(() => {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
+            });
+        }
+    });
+}
+
+//NOTIDICACIONES EN SISTEMA  POR CORREO
+
+document.addEventListener('click', function(e) {
+    const panel   = document.getElementById('notif-panel');
+    const wrapper = document.getElementById('notif-wrapper');
+    if (panel && wrapper && 
+        !panel.contains(e.target) && 
+        !wrapper.contains(e.target)) {
+        panel.style.display = 'none';
+    }
+});
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notif-panel');
+    if (!panel) return;
+    const visible = panel.style.display === 'block';
+    if (!visible) {
+        panel.style.display = 'block';
+        cargarListaNotificaciones();
+        marcarTodasLeidas();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function cargarContador() {
+    fetch('/notificaciones/count', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('notif-badge');
+            const count = document.getElementById('notif-count');
+            if (!badge || !count) return;
+            if (data.noLeidas > 0) {
+                badge.style.display = 'inline-block';
+                count.textContent = data.noLeidas > 99 ? '99+' : data.noLeidas;
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(() => {});
+}
+
+function cargarListaNotificaciones() {
+    fetch('/notificaciones/lista', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(notifs => {
+            const lista = document.getElementById('notif-list');
+            if (!lista) return;
+            if (!notifs || notifs.length === 0) {
+                lista.innerHTML = `
+                    <p style="text-align:center;color:#aaa;padding:20px;margin:0;">
+                        Sin notificaciones
+                    </p>`;
+                return;
+            }
+            lista.innerHTML = notifs.map(n => `
+                <div style="padding:12px 16px;
+                            border-bottom:1px solid #f0f0f0;
+                            background:${n.leida ? '#fff' : '#fffbeb'};">
+                    <div style="display:flex; justify-content:space-between; 
+                                align-items:flex-start;">
+                        <strong style="font-size:0.85rem; color:#1a1a2e;">
+                            ${n.titulo}
+                        </strong>
+                        <span style="font-size:0.7rem; color:#aaa; 
+                                     white-space:nowrap; margin-left:8px;">
+                            ${n.fecha}
+                        </span>
+                    </div>
+                    <p style="margin:4px 0 0; font-size:0.82rem; color:#555;">
+                        ${n.mensaje}
+                    </p>
+                    ${!n.leida 
+                        ? '<span style="font-size:0.7rem;color:#f0a500;font-weight:600;">● Nuevo</span>' 
+                        : ''}
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            const lista = document.getElementById('notif-list');
+            if (lista) lista.innerHTML =
+                '<p style="text-align:center;color:#e55;padding:20px;margin:0;">Error al cargar</p>';
+        });
+}
+
+function marcarTodasLeidas() {
+    fetch('/notificaciones/marcar-leidas', {
+        method: 'POST',
+        credentials: 'same-origin'
+    })
+    .then(() => {
+        const badge = document.getElementById('notif-badge');
+        const count = document.getElementById('notif-count');
+        if (badge) badge.style.display = 'none';
+        if (count) count.textContent = '0';
+    })
+    .catch(() => {});
+}
+
+cargarContador();
+setInterval(cargarContador, 30000);
 

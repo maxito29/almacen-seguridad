@@ -52,4 +52,8 @@ public class ProductoService {
         Pageable pageable = PageRequest.of(page, size);
         return productoRepo.findByEstado(estado, pageable);
     }
+    
+    public boolean existe(String id) {
+        return productoRepo.existsById(id);
+    }
 }

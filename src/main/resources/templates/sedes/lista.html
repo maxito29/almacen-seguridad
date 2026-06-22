@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Sedes', ~{::section})}">
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-building text-warning me-2"></i>Sedes
+            </h4>
+            <small class="text-muted">Oficinas / locales de la empresa</small>
+        </div>
+        <button class="btn btn-warning btn-sm text-white"
+                data-bs-toggle="modal"
+                data-bs-target="#modalSede"
+                onclick="limpiarModalSede()">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Sede
+        </button>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="buscador" class="form-control"
+                               placeholder="Buscar por nombre o código..."
+                               onkeyup="filtrarTablaSedes()"/>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroEstado" class="form-select form-select-sm"
+                            onchange="filtrarDesdeSelectSedes(this.value)">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="suspendido">Suspendido</option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <small class="text-muted" id="textoPaginaFiltro">
+                        Página <strong th:text="${paginaActual + 1}"></strong>
+                        de <strong th:text="${totalPaginas}"></strong>
+                        — Total: <strong th:text="${paginado.totalElements}"></strong> registros
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-stat">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tablaSedes">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th style="width:100px">Código</th>
+                            <th>Nombre</th>
+                            <th>Dirección</th>
+                            <th style="width:85px">Estado</th>
+                            <th style="width:75px">Acc.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="s : ${sedes}"
+                            th:classappend="${s.estado == 2} ? 'table-secondary' : ''">
+                            <td th:text="${s.idSede}"></td>
+                            <td><span class="badge bg-dark" th:text="${s.codigo}"></span></td>
+                            <td class="fw-semibold" th:text="${s.nombre}"></td>
+                            <td th:text="${s.direccion ?: '-'}"></td>
+                            <td>
+                                <span th:if="${s.estado == 1}" class="badge bg-success">Activo</span>
+                                <span th:if="${s.estado == 2}" class="badge bg-secondary">Suspendido</span>
+                            </td>
+                            <td>
+                                <div class="acciones-btn">
+                                    <button class="btn btn-warning btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalSede"
+                                            th:data-id="${s.idSede}"
+                                            th:data-codigo="${s.codigo}"
+                                            th:data-nombre="${s.nombre}"
+                                            th:data-direccion="${s.direccion}"
+                                            th:data-estado="${s.estado}"
+                                            onclick="editarSede(this)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a href="javascript:void(0)"
+                                       th:data-url="@{/sedes/estado/{id}(id=${s.idSede})}"
+                                       th:data-estado="${s.estado}"
+                                       th:class="${s.estado == 1} ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm'"
+                                       onclick="confirmarEstadoSede(this.dataset.url, this.dataset.estado)">
+                                        <i th:class="${s.estado == 1} ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(sedes)}">
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No hay sedes registradas
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted" id="textoMostrando">
+                Mostrando <strong th:text="${sedes.size()}"></strong>
+                de <strong th:text="${paginado.totalElements}"></strong> registros
+            </small>
+            <div class="d-flex flex-column align-items-center">
+                <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1">
+                    <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0} ? 'irPaginaSedes(0)' : ''">«</a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0} ? 'irPaginaSedes(' + ${paginaActual - 1} + ')' : ''">‹</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(
+                            T(java.lang.Math).max(0, paginaActual - 2),
+                            T(java.lang.Math).min(totalPaginas - 1, paginaActual + 2))}"
+                        th:classappend="${i == paginaActual} ? 'active' : ''">
+                        <a th:class="${i == paginaActual} ? 'page-link-circular active' : 'page-link-circular'"
+                           href="javascript:void(0)"
+                           th:onclick="'irPaginaSedes(' + ${i} + ')'">
+                            <span th:text="${i + 1}"></span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaSedes(' + ${paginaActual + 1} + ')' : ''">›</a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaSedes(' + ${totalPaginas - 1} + ')' : ''">»</a>
+                    </li>
+                </ul>
+                <small class="text-muted" id="textoPaginaBottom">
+                    Página <strong th:text="${paginaActual + 1}"></strong>
+                    de <strong th:text="${totalPaginas}"></strong>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalSede" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title" id="tituloModalSede">
+                        <i class="bi bi-building me-2"></i>Nueva Sede
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formSede" onsubmit="guardarSede(event)">
+                    <input type="hidden" name="idSede" id="idSede"/>
+                    <input type="hidden" name="estado" id="inputEstadoSede"/>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Código</label>
+                                <input type="text" class="form-control" name="codigo" id="inputCodigoSede"
+                                       placeholder="Ej: CUS" required/>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Nombre</label>
+                                <input type="text" class="form-control" name="nombre" id="inputNombreSede"
+                                       placeholder="Ej: Sede Cusco" required/>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Dirección</label>
+                                <input type="text" class="form-control" name="direccion" id="inputDireccionSede"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning text-white">
+                            <i class="bi bi-save me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

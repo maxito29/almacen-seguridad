@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="margin:0; padding:0; background:#f4f4f7; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:30px 0;">
+        <table width="480" style="background:#ffffff; border-radius:10px; overflow:hidden;">
+          <tr>
+            <td style="background:#1a1a2e; padding:20px; text-align:center;">
+              <h2 style="color:#f0a500; margin:0;">Sistema Almacén</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px;">
+              <p>Hola <strong th:text="${nombre}">Usuario</strong>,</p>
+              <p>Se ha creado una cuenta para ti en el Sistema Almacén. Estos son tus datos de acceso:</p>
+              <table style="width:100%; margin:20px 0;">
+                <tr>
+                  <td style="padding:8px 0; color:#555;">Usuario:</td>
+                  <td style="padding:8px 0; font-weight:bold;" th:text="${username}">usuario</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0; color:#555;">Contraseña:</td>
+                  <td style="padding:8px 0; font-weight:bold;" th:text="${password}">contraseña</td>
+                </tr>
+              </table>
+              <p style="color:#888; font-size:13px;">
+                Por seguridad, no compartas estos datos con nadie.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

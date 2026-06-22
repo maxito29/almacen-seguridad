@@ -1,6 +1,5 @@
 package com.seguridad.service;
 
-
 import com.seguridad.model.*;
 import com.seguridad.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,23 +14,20 @@ public class IngresoService {
     @Autowired IngresoRepository ingresoRepo;
     @Autowired ProductoRepository productoRepo;
     @Autowired KardexRepository kardexRepo;
+    @Autowired StockSedeService stockSedeService;
 
-    // Listado con paginacion
-    public Page<Ingreso> listar(int page, int size) {
+    public Page<Ingreso> listar(int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
-        return ingresoRepo.findAll(pageable);
+        return ingresoRepo.filtrarIngresos(idSedeRestriccion, null, null, pageable);
     }
 
-    // Guardar ingreso + actualizar stock + registrar Kardex
     @Transactional
     public void guardar(Ingreso ingreso) {
         ingreso.setTotal(ingreso.getCantidad() * ingreso.getCostoUnitario());
         ingreso.setFecha(new Date());
-
         if (ingreso.getIdIngreso() == null) {
             ingreso.setEstado(1);
         }
-
         ingresoRepo.save(ingreso);
 
         Producto p = productoRepo.findById(
@@ -39,12 +35,10 @@ public class IngresoService {
         p.setCostoUnitario(ingreso.getCostoUnitario());
         p.setStockTotal(p.getStockTotal() + ingreso.getCantidad());
         productoRepo.save(p);
-
-        // Registro en Kardex
+        stockSedeService.sumar(p, ingreso.getSede(), ingreso.getCantidad());
         int saldoAnterior = kardexRepo
             .findUltimoSaldo(p.getIdProducto(), ingreso.getSede().getIdSede())
             .orElse(0);
-
         Kardex k = new Kardex();
         k.setProducto(p);
         k.setSede(ingreso.getSede());
@@ -66,26 +60,15 @@ public class IngresoService {
         i.setEstado(i.getEstado() == 1 ? 2 : 1);
         ingresoRepo.save(i);
     }
-    
-    public Page<Ingreso> buscar(String texto, int page, int size) {
 
+    public Page<Ingreso> buscar(String texto, int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
-
-        return ingresoRepo
-                .findByProductoDescripcionContainingIgnoreCaseOrProveedorNombreContainingIgnoreCaseOrSedeNombreContainingIgnoreCase(
-                        texto,
-                        texto,
-                        texto,
-                        pageable);
+        return ingresoRepo.filtrarIngresos(idSedeRestriccion, null, texto, pageable);
     }
-    
-    public Page<Ingreso> buscarConFiltro(String texto, int estado, int page, int size) {
+
+    public Page<Ingreso> buscarConFiltro(String texto, int estado, int page, int size,
+                                          Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
-        return ingresoRepo
-            .findByEstadoAndProductoDescripcionContainingIgnoreCaseOrEstadoAndProveedorNombreContainingIgnoreCaseOrEstadoAndSedeNombreContainingIgnoreCase(
-                estado, texto,
-                estado, texto,
-                estado, texto,
-                pageable);
+        return ingresoRepo.filtrarIngresos(idSedeRestriccion, estado, texto, pageable);
     }
 }

@@ -4,22 +4,23 @@
 <body>
 <section>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h4 class="fw-bold mb-0">
-                <i class="bi bi-truck text-primary me-2"></i>Proveedores
-            </h4>
-            <small class="text-muted">
-                Gestión de proveedores con consulta SUNAT
-            </small>
-        </div>
-        <button class="btn btn-primary btn-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#modalProveedor"
-                onclick="limpiarModalProveedor()">
-            <i class="bi bi-plus-circle me-1"></i>Nuevo Proveedor
-        </button>
-    </div>
+	<div class="d-flex justify-content-between align-items-center mb-3">
+	    <div>
+	        <h4 class="fw-bold mb-0">
+	            <i class="bi bi-truck text-primary me-2"></i>Proveedores
+	        </h4>
+	        <small class="text-muted">
+	            Gestión de proveedores con consulta SUNAT
+	        </small>
+	    </div>
+	    <button th:if="${esAdmin}"
+	            class="btn btn-primary btn-sm"
+	            data-bs-toggle="modal"
+	            data-bs-target="#modalProveedor"
+	            onclick="limpiarModalProveedor()">
+	        <i class="bi bi-plus-circle me-1"></i>Nuevo Proveedor
+	    </button>
+	</div>
     <div class="card shadow-sm mb-3">
         <div class="card-body py-2">
             <div class="row g-2 align-items-center">
@@ -105,38 +106,39 @@
                                       class="badge bg-secondary">
                                     Suspendido</span>
                             </td>
-                            <td>
-                                <div class="acciones-btn">
-                                    <button class="btn btn-warning btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalProveedor"
-                                            th:data-id="${p.idProveedor}"
-                                            th:data-ruc="${p.ruc}"
-                                            th:data-nombre="${p.nombre}"
-                                            th:data-direccion="${p.direccion}"
-                                            th:data-telefono="${p.telefono}"
-                                            th:data-tipo="${p.tipo}"
-                                            th:data-estadosunat="${p.estadoSunat}"
-                                            th:data-estado="${p.estado}"
-                                            onclick="editarProveedor(this)">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <a href="javascript:void(0)"
-                                       th:data-url="@{/proveedores/estado/{id}
-                                           (id=${p.idProveedor})}"
-                                       th:data-estado="${p.estado}"
-                                       th:class="${p.estado == 1}
-                                           ? 'btn btn-danger btn-sm'
-                                           : 'btn btn-success btn-sm'"
-                                       onclick="confirmarEstadoProveedor(
-                                           this.dataset.url,
-                                           this.dataset.estado)">
-                                        <i th:class="${p.estado == 1}
-                                            ? 'bi bi-pause-circle'
-                                            : 'bi bi-play-circle'"></i>
-                                    </a>
-                                </div>
-                            </td>
+							<td>
+							    <div class="acciones-btn" th:if="${esAdmin}">
+							        <button class="btn btn-warning btn-sm"
+							                data-bs-toggle="modal"
+							                data-bs-target="#modalProveedor"
+							                th:data-id="${p.idProveedor}"
+							                th:data-ruc="${p.ruc}"
+							                th:data-nombre="${p.nombre}"
+							                th:data-direccion="${p.direccion}"
+							                th:data-telefono="${p.telefono}"
+							                th:data-tipo="${p.tipo}"
+							                th:data-estadosunat="${p.estadoSunat}"
+							                th:data-estado="${p.estado}"
+							                onclick="editarProveedor(this)">
+							            <i class="bi bi-pencil"></i>
+							        </button>
+							        <a href="javascript:void(0)"
+							           th:data-url="@{/proveedores/estado/{id}
+							               (id=${p.idProveedor})}"
+							           th:data-estado="${p.estado}"
+							           th:class="${p.estado == 1}
+							               ? 'btn btn-danger btn-sm'
+							               : 'btn btn-success btn-sm'"
+							           onclick="confirmarEstadoProveedor(
+							               this.dataset.url,
+							               this.dataset.estado)">
+							            <i th:class="${p.estado == 1}
+							                ? 'bi bi-pause-circle'
+							                : 'bi bi-play-circle'"></i>
+							        </a>
+							    </div>
+							    <span th:unless="${esAdmin}" class="text-muted">—</span>
+							</td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(proveedores)}">
                             <td colspan="8"

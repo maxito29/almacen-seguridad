@@ -17,7 +17,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: #1a1a2e; /* Color base de tu sistema */
+    background: #1a1a2e; 
 }
 
 .container {
@@ -212,7 +212,6 @@ body {
     transition-delay: .5s;
 }
 
-/* Mensajes de alerta */
 .alert-error,
 .alert-success {
     padding: 10px 14px;
@@ -234,7 +233,6 @@ body {
     color: #75d8a8;
 }
 
-/* Responsive */
 @media (max-width: 650px) {
     .container {
         width: 90%;

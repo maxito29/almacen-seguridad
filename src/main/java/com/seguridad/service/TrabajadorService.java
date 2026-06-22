@@ -12,23 +12,19 @@ public class TrabajadorService {
     @Autowired
     TrabajadorRepository trabajadorRepo;
 
-    // Listado 
-    public Page<Trabajador> listar(int page, int size) {
+    public Page<Trabajador> listar(int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
-        return trabajadorRepo.findAll(pageable);
+        return trabajadorRepo.filtrarTrabajadores(idSedeRestriccion, null, null, pageable);
     }
 
-    // Guardar 
     public void guardar(Trabajador trabajador) {
         if (trabajador.getIdTrabajador() == null) {
-            // Solo al crear
             trabajador.setEstado(1);
             if (trabajador.getActivoCesado() == null ||
                 trabajador.getActivoCesado().isEmpty()) {
                 trabajador.setActivoCesado("ACTIVO");
             }
         } else {
-            // Al editar — recuperar estado numérico del registro original
             trabajadorRepo.findById(trabajador.getIdTrabajador())
                 .ifPresent(original -> {
                     if (trabajador.getEstado() == null) {
@@ -39,60 +35,34 @@ public class TrabajadorService {
         trabajadorRepo.save(trabajador);
     }
 
-    // Cambiar estado 
     public void cambiarEstado(Integer id) {
-
         Trabajador t = trabajadorRepo.findById(id).get();
-
         if ("ACTIVO".equalsIgnoreCase(t.getActivoCesado())) {
             t.setActivoCesado("CESADO");
         } else {
             t.setActivoCesado("ACTIVO");
         }
-
         trabajadorRepo.save(t);
     }
 
-    // Buscar 
-    public Page<Trabajador> buscar(
-            String texto,
-            int page,
-            int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return trabajadorRepo
-                .findByNombreCompletoContainingIgnoreCaseOrDocumentoIdentidadContainingIgnoreCase(
-                        texto,
-                        texto,
-                        pageable);
-    }
- // Filtrar estado
-    public Page<Trabajador> listarPorEstado(
-            String estado,
-            int page,
-            int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return trabajadorRepo.findByActivoCesado(
-                estado,
-                pageable);
+    public Trabajador obtenerPorId(Integer id) {
+        return trabajadorRepo.findById(id).orElse(null);
     }
 
-    // Busc
-    public Page<Trabajador> buscarConFiltro(
-            String texto,
-            String estado,
-            int page,
-            int size) {
-
+    public Page<Trabajador> buscar(String texto, int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
+        return trabajadorRepo.filtrarTrabajadores(idSedeRestriccion, null, texto, pageable);
+    }
 
-        return trabajadorRepo
-                .findByActivoCesadoAndNombreCompletoContainingIgnoreCase(
-                        estado,
-                        texto,
-                        pageable);
+    public Page<Trabajador> listarPorEstado(String estado, int page, int size,
+                                             Integer idSedeRestriccion) {
+        Pageable pageable = PageRequest.of(page, size);
+        return trabajadorRepo.filtrarTrabajadores(idSedeRestriccion, estado, null, pageable);
+    }
+
+    public Page<Trabajador> buscarConFiltro(String texto, String estado, int page, int size,
+                                             Integer idSedeRestriccion) {
+        Pageable pageable = PageRequest.of(page, size);
+        return trabajadorRepo.filtrarTrabajadores(idSedeRestriccion, estado, texto, pageable);
     }
 }

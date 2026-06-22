@@ -1,36 +1,36 @@
 package com.seguridad.controller;
-
 import com.seguridad.model.Proveedor;
+import com.seguridad.security.AccesoSedeHelper;
 import com.seguridad.service.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
-
 @Controller
 @RequestMapping("/proveedores")
 public class ProveedorController {
-
     @Autowired ProveedorService proveedorService;
+    @Autowired AccesoSedeHelper accesoSedeHelper;
 
     @GetMapping
     public String listar(Model model,
-            @RequestParam(defaultValue = "0") int page) {
-
+            @RequestParam(defaultValue = "0") int page,
+            Authentication auth) {
         Page<Proveedor> paginado = proveedorService.listar(page, 10);
-
         model.addAttribute("proveedores",  paginado.getContent());
         model.addAttribute("paginado",     paginado);
         model.addAttribute("paginaActual", page);
         model.addAttribute("totalPaginas", paginado.getTotalPages());
         model.addAttribute("paginaActiva", "proveedores");
+        model.addAttribute("esAdmin",      accesoSedeHelper.esAdmin(auth));
         return "proveedores/lista";
     }
+
 
     @PostMapping("/guardar/ajax")
     @ResponseBody

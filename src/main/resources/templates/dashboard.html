@@ -59,31 +59,39 @@
             </div>
         </div>
     </div>
+	
+	<div class="d-flex justify-content-end mb-3" th:if="${esAdmin}">
+	    <button class="btn btn-outline-warning btn-sm" onclick="dispararAlertaStock()">
+	        <i class="bi bi-envelope-exclamation me-1"></i>Enviar Alertas de Stock Bajo
+	    </button>
+	</div>
 
-    <!-- Tarjetas para sedes -->
-    <h6 class="fw-bold mb-3"><i class="bi bi-building me-2"></i>Sedes</h6>
-    <div class="row g-3 mb-4">
-        <div class="col-md-4" th:each="s : ${sedes}">
-            <div class="card card-stat p-3"
-                 style="border-left: 4px solid #f0a500;">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <h6 class="fw-bold mb-0" th:text="${s.nombre}"></h6>
-                        <small class="text-muted" th:text="${s.direccion}"></small>
-                    </div>
-                    <span class="badge bg-dark" th:text="${s.codigo}"></span>
-                </div>
-                <div class="d-flex gap-2 mt-3">
-                    <a href="/productos" class="btn btn-warning btn-sm w-100">
-                        <i class="bi bi-box-seam me-1"></i>Ver Productos
-                    </a>
-                    <a href="/kardex" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-journal-text me-1"></i>Kardex
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+	<!-- Tarjetas para sedes -->
+	<div th:if="${not #lists.isEmpty(sedes)}">
+	    <h6 class="fw-bold mb-3"><i class="bi bi-building me-2"></i>Sedes</h6>
+	    <div class="row g-3 mb-4">
+	        <div class="col-md-4" th:each="s : ${sedes}">
+	            <div class="card card-stat p-3"
+	                 style="border-left: 4px solid #f0a500;">
+	                <div class="d-flex justify-content-between align-items-start mb-2">
+	                    <div>
+	                        <h6 class="fw-bold mb-0" th:text="${s.nombre}"></h6>
+	                        <small class="text-muted" th:text="${s.direccion}"></small>
+	                    </div>
+	                    <span class="badge bg-dark" th:text="${s.codigo}"></span>
+	                </div>
+	                <div class="d-flex gap-2 mt-3">
+	                    <a href="/productos" class="btn btn-warning btn-sm w-100">
+	                        <i class="bi bi-box-seam me-1"></i>Ver Productos
+	                    </a>
+	                    <a href="/kardex" class="btn btn-outline-secondary btn-sm w-100">
+	                        <i class="bi bi-journal-text me-1"></i>Kardex
+	                    </a>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	</div>
 	
 	
 	<!-- Graficos ApexCharts -->

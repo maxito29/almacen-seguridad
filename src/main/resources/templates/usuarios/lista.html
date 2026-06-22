@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Usuarios', ~{::section})}">
+<body>
+<section>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-person-gear text-info me-2"></i>Usuarios
+            </h4>
+            <small class="text-muted">Gestión de accesos al sistema</small>
+        </div>
+        <button class="btn btn-info btn-sm text-white"
+                data-bs-toggle="modal"
+                data-bs-target="#modalUsuario"
+                onclick="limpiarModalUsuario()">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Usuario
+        </button>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="buscador" class="form-control"
+                               placeholder="Buscar por usuario o nombre..."
+                               onkeyup="filtrarTablaUsuarios()"/>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroEstado" class="form-select form-select-sm"
+                            onchange="filtrarDesdeSelectUsuarios(this.value)">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="suspendido">Suspendido</option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <small class="text-muted" id="textoPaginaFiltro">
+                        Página <strong th:text="${paginaActual + 1}"></strong>
+                        de <strong th:text="${totalPaginas}"></strong>
+                        — Total: <strong th:text="${paginado.totalElements}"></strong> registros
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-stat">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tablaUsuarios">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th style="width:100px">Rol</th>
+                            <th style="width:120px">Sede</th>
+                            <th style="width:85px">Estado</th>
+							<th style="width:120px">Email</th>
+                            <th style="width:75px">Acc.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="u : ${usuarios}"
+                            th:classappend="${u.estado == 2} ? 'table-secondary' : ''">
+                            <td th:text="${u.idUsuario}"></td>
+                            <td><span class="fw-semibold text-primary" th:text="${u.username}"></span></td>
+                            <td th:text="${u.nombre}"></td>
+                            <td>
+                                <span th:class="${u.rol == 'ADMIN'} ? 'badge bg-warning text-dark' : 'badge bg-secondary'"
+                                      th:text="${u.rol}"></span>
+                            </td>
+                            <td th:text="${u.sede != null ? u.sede.nombre : '-'}"></td>
+                            <td>
+                                <span th:if="${u.estado == 1}" class="badge bg-success">Activo</span>
+                                <span th:if="${u.estado == 2}" class="badge bg-secondary">Suspendido</span>
+                            </td>
+							<td th:text="${u.email ?: '-'}"></td>
+                            <td>
+                                <div class="acciones-btn">
+									<button class="btn btn-warning btn-sm"
+									        data-bs-toggle="modal"
+									        data-bs-target="#modalUsuario"
+									        th:data-id="${u.idUsuario}"
+									        th:data-username="${u.username}"
+									        th:data-nombre="${u.nombre}"
+									        th:data-rol="${u.rol}"
+									        th:data-sede="${u.sede != null ? u.sede.idSede : ''}"
+									        th:data-estado="${u.estado}"
+									        th:data-email="${u.email}"
+									        onclick="editarUsuario(this)">
+									    <i class="bi bi-pencil"></i>
+									</button>
+                                    <a href="javascript:void(0)"
+                                       th:data-url="@{/usuarios/estado/{id}(id=${u.idUsuario})}"
+                                       th:data-estado="${u.estado}"
+                                       th:class="${u.estado == 1} ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm'"
+                                       onclick="confirmarEstadoUsuario(this.dataset.url, this.dataset.estado)">
+                                        <i th:class="${u.estado == 1} ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+						<tr th:if="${#lists.isEmpty(usuarios)}">
+						    <td colspan="8" class="text-center text-muted py-4">
+                                No hay usuarios registrados
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted" id="textoMostrando">
+                Mostrando <strong th:text="${usuarios.size()}"></strong>
+                de <strong th:text="${paginado.totalElements}"></strong> registros
+            </small>
+            <div class="d-flex flex-column align-items-center">
+                <ul class="pagination align-items-center shadow-sm rounded-pill px-3 py-2 bg-white mb-1">
+                    <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0} ? 'irPaginaUsuarios(0)' : ''">«</a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == 0} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual > 0} ? 'irPaginaUsuarios(' + ${paginaActual - 1} + ')' : ''">‹</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(
+                            T(java.lang.Math).max(0, paginaActual - 2),
+                            T(java.lang.Math).min(totalPaginas - 1, paginaActual + 2))}"
+                        th:classappend="${i == paginaActual} ? 'active' : ''">
+                        <a th:class="${i == paginaActual} ? 'page-link-circular active' : 'page-link-circular'"
+                           href="javascript:void(0)"
+                           th:onclick="'irPaginaUsuarios(' + ${i} + ')'">
+                            <span th:text="${i + 1}"></span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaUsuarios(' + ${paginaActual + 1} + ')' : ''">›</a>
+                    </li>
+                    <li class="page-item" th:classappend="${paginaActual == totalPaginas - 1} ? 'disabled' : ''">
+                        <a class="page-link-circular" href="javascript:void(0)"
+                           th:onclick="${paginaActual < totalPaginas - 1} ? 'irPaginaUsuarios(' + ${totalPaginas - 1} + ')' : ''">»</a>
+                    </li>
+                </ul>
+                <small class="text-muted" id="textoPaginaBottom">
+                    Página <strong th:text="${paginaActual + 1}"></strong>
+                    de <strong th:text="${totalPaginas}"></strong>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title" id="tituloModalUsuario">
+                        <i class="bi bi-person-gear me-2"></i>Nuevo Usuario
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formUsuario" onsubmit="guardarUsuario(event)">
+                    <input type="hidden" name="idUsuario" id="idUsuario"/>
+                    <input type="hidden" name="estado" id="inputEstadoUsuario"/>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Usuario</label>
+                                <input type="text" class="form-control" name="username" id="inputUsername" required/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nombre completo</label>
+                                <input type="text" class="form-control" name="nombre" id="inputNombreUsuario" required/>
+                            </div>
+							<div class="col-md-6">
+							    <label class="form-label fw-semibold">Correo</label>
+							    <input type="email" class="form-control" name="email" id="inputEmailUsuario"
+							           placeholder="usuario@empresa.com"/>
+							</div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    Contraseña
+                                    <small class="text-muted fw-normal" id="hintPassword"></small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" name="password" id="inputPasswordUsuario"/>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleVerPasswordUsuario()">
+                                        <i class="bi bi-eye-slash" id="iconVerPasswordUsuario"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Rol</label>
+                                <select class="form-select" name="rol" id="selectRolUsuario"
+                                        onchange="toggleSedeUsuario()" required>
+                                    <option value="ADMIN">ADMIN</option>
+                                    <option value="ALMACEN">ALMACEN</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="bloqueSedeUsuario">
+                                <label class="form-label fw-semibold">Sede</label>
+                                <select class="form-select" name="idSede" id="selectSedeUsuario">
+                                    <option value="">-- Seleccione --</option>
+                                    <option th:each="s : ${sedes}" th:value="${s.idSede}" th:text="${s.nombre}"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info text-white">
+                            <i class="bi bi-save me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

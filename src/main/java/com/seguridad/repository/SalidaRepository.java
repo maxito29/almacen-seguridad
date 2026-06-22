@@ -15,4 +15,14 @@ public interface SalidaRepository extends JpaRepository<Salida, Integer> {
 	       "WHERE s.fecha >= :fechaInicio " +
 	       "GROUP BY MONTH(s.fecha) ORDER BY mes")
 	List<Object[]> contarPorMes(@Param("fechaInicio") Date fechaInicio);
+	
+
+	long countBySede_IdSede(Integer idSede);
+
+	@Query("SELECT MONTH(s.fecha) as mes, COUNT(s) as total " +
+	     "FROM Salida s " +
+	     "WHERE s.fecha >= :fechaInicio AND s.sede.idSede = :idSede " +
+	     "GROUP BY MONTH(s.fecha) ORDER BY mes")
+	List<Object[]> contarPorMesYSede(@Param("fechaInicio") Date fechaInicio,
+	                                  @Param("idSede") Integer idSede);
 }

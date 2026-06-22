@@ -1,6 +1,7 @@
 package com.seguridad.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import com.seguridad.model.Producto;
 import com.seguridad.model.Sede;
 import com.seguridad.repository.ProductoRepository;
 import com.seguridad.repository.SedeRepository;
+import com.seguridad.security.AccesoSedeHelper;
 import com.seguridad.service.KardexService;
 import java.util.List;
 import java.util.HashMap;
@@ -31,13 +33,22 @@ public class KardexController {
     private ProductoRepository productoRepository;
     @Autowired
     private SedeRepository sedeRepository;
+    @Autowired
+    private AccesoSedeHelper accesoSedeHelper;
 
     @GetMapping
-    public String listarKardex(Model model) {
+    public String listarKardex(Model model, Authentication auth) {
         List<Producto> productos = productoRepository.findAll();
-        List<Sede> sedes = sedeRepository.findAll();
         model.addAttribute("productos", productos);
-        model.addAttribute("sedes", sedes);
+        Integer idSedeRestriccion = accesoSedeHelper.idSedeRestriccion(auth);
+        if (idSedeRestriccion == null) {
+            model.addAttribute("sedes", sedeRepository.findAll());
+        } else {
+            model.addAttribute("sedes", sedeRepository.findById(idSedeRestriccion)
+                    .map(List::of).orElse(List.of()));
+        }
+
+        model.addAttribute("paginaActiva", "kardex");
         return "kardex/lista";
     }
 
@@ -51,14 +62,18 @@ public class KardexController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "fecha") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            Authentication auth) {
         try {
             System.out.println("=== KARDEX JSON ===");
             System.out.println("idProducto: " + idProducto);
-            System.out.println("idSede: " + idSede);
+            System.out.println("idSede (pedido por el cliente): " + idSede);
             System.out.println("tipoMov: " + tipoMov);
             System.out.println("texto: " + texto);
             System.out.println("page: " + page);
+            Integer idSedeRestriccion = accesoSedeHelper.idSedeRestriccion(auth);
+            Integer idSedeEfectivo = (idSedeRestriccion != null) ? idSedeRestriccion : idSede;
+            System.out.println("idSede (efectivo aplicado): " + idSedeEfectivo);
 
             Sort sort = sortDir.equalsIgnoreCase("asc")
                     ? Sort.by(sortBy).ascending()
@@ -66,7 +81,7 @@ public class KardexController {
             Pageable pageable = PageRequest.of(page, size, sort);
 
             Page<Kardex> paginado = kardexService.listarKardex(
-                    idProducto, idSede, tipoMov, texto, pageable);
+                    idProducto, idSedeEfectivo, tipoMov, texto, pageable);
 
             Map<String, Object> response = new HashMap<>();
             response.put("content", paginado.getContent());

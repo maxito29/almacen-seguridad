@@ -2,12 +2,17 @@ package com.seguridad.controller;
 
 
 import com.seguridad.model.Producto;
+import com.seguridad.model.Sede;
 import com.seguridad.repository.*;
+import com.seguridad.security.AccesoSedeHelper;
+import com.seguridad.service.StockAlertaService;
+import com.seguridad.service.StockSedeService;
 
 import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,22 +29,44 @@ public class DashboardController {
     @Autowired IngresoRepository    ingresoRepo;
     @Autowired SalidaRepository     salidaRepo;
     @Autowired TrabajadorRepository trabajadorRepo;
+    @Autowired AccesoSedeHelper     accesoSedeHelper;
+    @Autowired StockSedeService     stockSedeService;
+    @Autowired StockAlertaService stockAlertaService;
 
     @GetMapping("/")
     public String dashboard(Model model,
             @RequestParam(defaultValue = "0") int page,
             Authentication authentication) throws Exception {
-    	
+
+        Integer idSedeRestriccion = accesoSedeHelper.idSedeRestriccion(authentication);
         Pageable pageable = PageRequest.of(page, 8,
             Sort.by("stockTotal").ascending());
         Page<Producto> paginado = productoRepo.findAll(pageable);
+        List<Producto> productosVisibles = aplicarStockPorSedeSiAplica(
+                paginado.getContent(), idSedeRestriccion);
 
-        model.addAttribute("totalProductos",    productoRepo.count());
-        model.addAttribute("totalIngresos",     ingresoRepo.count());
-        model.addAttribute("totalSalidas",      salidaRepo.count());
-        model.addAttribute("totalTrabajadores", trabajadorRepo.count());
-        model.addAttribute("sedes",             sedeRepo.findAll());
-        model.addAttribute("productos",         paginado.getContent());
+        model.addAttribute("totalProductos", productoRepo.count());
+        model.addAttribute("esAdmin", idSedeRestriccion == null);
+        if (idSedeRestriccion == null) {
+            model.addAttribute("totalIngresos",     ingresoRepo.count());
+            model.addAttribute("totalSalidas",      salidaRepo.count());
+            model.addAttribute("totalTrabajadores", trabajadorRepo.count());
+           
+        } else {
+            model.addAttribute("totalIngresos",
+                ingresoRepo.countBySede_IdSede(idSedeRestriccion));
+            model.addAttribute("totalSalidas",
+                salidaRepo.countBySede_IdSede(idSedeRestriccion));
+            model.addAttribute("totalTrabajadores",
+                (long) trabajadorRepo.countBySede_IdSede(idSedeRestriccion));
+        }
+
+        List<Sede> sedesVisibles = (idSedeRestriccion == null)
+                ? sedeRepo.findAll()
+                : List.of();
+        model.addAttribute("sedes", sedesVisibles);
+
+        model.addAttribute("productos",         productosVisibles);
         model.addAttribute("paginado",          paginado);
         model.addAttribute("paginaActual",      page);
         model.addAttribute("totalPaginas",      paginado.getTotalPages());
@@ -77,18 +104,24 @@ public class DashboardController {
             iterador.add(Calendar.MONTH, 1);
         }
 
-        List<Object[]> ingresosPorMes = ingresoRepo.contarPorMes(fechaInicio);
+        List<Object[]> ingresosPorMes = (idSedeRestriccion == null)
+                ? ingresoRepo.contarPorMes(fechaInicio)
+                : ingresoRepo.contarPorMesYSede(fechaInicio, idSedeRestriccion);
+
         Calendar base = Calendar.getInstance();
         base.add(Calendar.MONTH, -5);
-        int mesBase = base.get(Calendar.MONTH); 
+        int mesBase = base.get(Calendar.MONTH);
 
         for (Object[] row : ingresosPorMes) {
-            int mes   = ((Number) row[0]).intValue() - 1; 
+            int mes   = ((Number) row[0]).intValue() - 1;
             int index = (mes - mesBase + 12) % 12;
             if (index < 6) ingresosData.set(index, ((Number) row[1]).longValue());
         }
 
-        List<Object[]> salidasPorMes = salidaRepo.contarPorMes(fechaInicio);
+        List<Object[]> salidasPorMes = (idSedeRestriccion == null)
+                ? salidaRepo.contarPorMes(fechaInicio)
+                : salidaRepo.contarPorMesYSede(fechaInicio, idSedeRestriccion);
+
         for (Object[] row : salidasPorMes) {
             int mes   = ((Number) row[0]).intValue() - 1;
             int index = (mes - mesBase + 12) % 12;
@@ -98,8 +131,9 @@ public class DashboardController {
         model.addAttribute("mesesLabels",  mapper.writeValueAsString(mesesLabels));
         model.addAttribute("ingresosData", mapper.writeValueAsString(ingresosData));
         model.addAttribute("salidasData",  mapper.writeValueAsString(salidasData));
-        List<Object[]> top5 = productoRepo.top5Productos(
-            PageRequest.of(0, 5));
+        List<Object[]> top5 = (idSedeRestriccion == null)
+                ? productoRepo.top5Productos(PageRequest.of(0, 5))
+                : stockSedeService.top5PorSede(idSedeRestriccion);
         List<String> top5Labels  = new ArrayList<>();
         List<Integer> top5Stock  = new ArrayList<>();
         for (Object[] row : top5) {
@@ -109,30 +143,62 @@ public class DashboardController {
         }
         model.addAttribute("top5Labels", mapper.writeValueAsString(top5Labels));
         model.addAttribute("top5Stock",  mapper.writeValueAsString(top5Stock));
-        
+
         if (authentication != null) {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            model.addAttribute("nombreUsuario", userDetails.getUsuario().getNombre()); 
+            model.addAttribute("nombreUsuario", userDetails.getUsuario().getNombre());
         }
         return "dashboard";
-        
+
     }
-    
+
     @GetMapping("/dashboard/stock/json")
     @ResponseBody
     public Map<String, Object> stockJson(
-            @RequestParam(defaultValue = "0") int page) {
+            @RequestParam(defaultValue = "0") int page,
+            Authentication authentication) {
 
-        Pageable pageable = PageRequest.of(page, 8,  
+        Pageable pageable = PageRequest.of(page, 8,
             Sort.by("stockTotal").ascending());
-        Page<Producto> paginado = productoRepo.findAll(pageable);  
+        Page<Producto> paginado = productoRepo.findAll(pageable);
+
+        Integer idSedeRestriccion = accesoSedeHelper.idSedeRestriccion(authentication);
+        List<Producto> productosVisibles = aplicarStockPorSedeSiAplica(
+                paginado.getContent(), idSedeRestriccion);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("productos",     paginado.getContent());
+        result.put("productos",     productosVisibles);
         result.put("totalPages",    paginado.getTotalPages());
         result.put("totalElements", paginado.getTotalElements());
         result.put("currentPage",   paginado.getNumber());
         return result;
     }
+
+    private List<Producto> aplicarStockPorSedeSiAplica(List<Producto> productos,
+                                                         Integer idSedeRestriccion) {
+        if (idSedeRestriccion == null) {
+            return productos; 
+        }
+        for (Producto p : productos) {
+            int stockEnSuSede = stockSedeService.obtenerCantidad(p.getIdProducto(), idSedeRestriccion);
+            p.setStockTotal(stockEnSuSede);
+        }
+        return productos;
+    }
     
+    @PostMapping("/dashboard/alerta-stock/ajax")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> dispararAlertaStock() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            stockAlertaService.enviarAlertasStockBajo();
+            response.put("success", true);
+            response.put("mensaje", "Alertas de stock bajo enviadas correctamente");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("mensaje", "Error: " + e.getMessage());
+        }
+        return ResponseEntity.ok(response);
+    }
+
 }

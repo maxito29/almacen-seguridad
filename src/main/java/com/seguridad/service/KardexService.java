@@ -22,8 +22,6 @@ public class KardexService {
             System.out.println("idSede: " + idSede);
             System.out.println("tipoMov: " + tipoMov);
             System.out.println("texto: " + texto);
-
-            // Normalizamos strings vacios a null para que la query los ignore
             String idProductoNorm = (idProducto != null && !idProducto.isEmpty())
                     ? idProducto : null;
             String tipoMovNorm = (tipoMov != null && !tipoMov.isEmpty())

@@ -1,6 +1,8 @@
 package com.seguridad.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,7 +17,8 @@ public class Usuario {
 
     @Column(nullable = false, unique = true)
     private String username;
-
+    
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -29,4 +32,7 @@ public class Usuario {
     private Sede sede;
 
     private Integer estado;
+    
+    @Column(nullable = true)
+    private String email;
 }

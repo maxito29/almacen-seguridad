@@ -1,57 +1,44 @@
 package com.seguridad.controller;
 
-import com.seguridad.model.Producto;
-import com.seguridad.repository.TipoEquipoRepository;
-import com.seguridad.security.AccesoSedeHelper;
-import com.seguridad.service.ProductoService;
-import com.seguridad.service.StockSedeService;
+import com.seguridad.model.Sede;
+import com.seguridad.service.SedeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/productos")
-public class ProductoController {
+@RequestMapping("/sedes")
+public class SedeController {
 
-    @Autowired ProductoService productoService;
-    @Autowired TipoEquipoRepository tipoEquipoRepo;
-    @Autowired StockSedeService stockSedeService;
-    @Autowired AccesoSedeHelper accesoSedeHelper;
+    @Autowired SedeService sedeService;
 
     @GetMapping
     public String listar(Model model,
-            @RequestParam(defaultValue = "0") int page,
-            Authentication auth) {
-
-        Page<Producto> paginado = productoService.listar(page, 10);
-        List<Producto> productos = aplicarStockPorSedeSiAplica(paginado.getContent(), auth);
-
-        model.addAttribute("productos",    productos);
+            @RequestParam(defaultValue = "0") int page) {
+        Page<Sede> paginado = sedeService.listar(page, 10);
+        model.addAttribute("sedes",        paginado.getContent());
         model.addAttribute("paginado",     paginado);
         model.addAttribute("paginaActual", page);
         model.addAttribute("totalPaginas", paginado.getTotalPages());
-        model.addAttribute("tipos",        tipoEquipoRepo.findAll());
-        model.addAttribute("paginaActiva", "productos");
-        return "productos/lista";
+        model.addAttribute("paginaActiva", "sedes");
+        return "sedes/lista";
     }
 
     @PostMapping("/guardar/ajax")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> guardarAjax(
-            @ModelAttribute Producto producto) {
+            @ModelAttribute Sede sede) {
         Map<String, Object> response = new HashMap<>();
         try {
-            productoService.guardar(producto);
+            sedeService.guardar(sede);
             response.put("success", true);
-            response.put("mensaje", "Producto guardado correctamente");
+            response.put("mensaje", "Sede guardada correctamente");
         } catch (Exception e) {
             response.put("success", false);
             response.put("mensaje", "Error: " + e.getMessage());
@@ -62,10 +49,10 @@ public class ProductoController {
     @PostMapping("/estado/ajax/{id}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> cambiarEstadoAjax(
-            @PathVariable String id) {
+            @PathVariable Integer id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            productoService.cambiarEstado(id);
+            sedeService.cambiarEstado(id);
             response.put("success", true);
             response.put("mensaje", "Estado actualizado");
         } catch (Exception e) {
@@ -80,43 +67,27 @@ public class ProductoController {
     public Map<String, Object> listarJson(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "") String estado,
-            @RequestParam(defaultValue = "") String buscar,
-            Authentication auth) {
-        Page<Producto> paginado;
+            @RequestParam(defaultValue = "") String buscar) {
+        Page<Sede> paginado;
         boolean tieneTexto  = !buscar.isEmpty();
         boolean tieneEstado = !estado.isEmpty();
         if (tieneTexto && tieneEstado) {
             int estadoNum = estado.equals("activo") ? 1 : 2;
-            paginado = productoService.buscarConFiltro(buscar, estadoNum, page, 10);
+            paginado = sedeService.buscarConFiltro(buscar, estadoNum, page, 10);
         } else if (tieneTexto) {
-            paginado = productoService.buscar(buscar, page, 10);
+            paginado = sedeService.buscar(buscar, page, 10);
         } else if (tieneEstado) {
             int estadoNum = estado.equals("activo") ? 1 : 2;
-            paginado = productoService.listarPorEstado(estadoNum, page, 10);
+            paginado = sedeService.listarPorEstado(estadoNum, page, 10);
         } else {
-            paginado = productoService.listar(page, 10);
+            paginado = sedeService.listar(page, 10);
         }
 
-        List<Producto> productos = aplicarStockPorSedeSiAplica(paginado.getContent(), auth);
-
         Map<String, Object> response = new HashMap<>();
-        response.put("productos",     productos);
+        response.put("sedes",         paginado.getContent());
         response.put("totalElements", paginado.getTotalElements());
         response.put("totalPages",    paginado.getTotalPages());
         response.put("currentPage",   page);
         return response;
-    }
-
- 
-    private List<Producto> aplicarStockPorSedeSiAplica(List<Producto> productos, Authentication auth) {
-        Integer idSedeRestriccion = accesoSedeHelper.idSedeRestriccion(auth);
-        if (idSedeRestriccion == null) {
-            return productos; 
-        }
-        for (Producto p : productos) {
-            int stockEnSuSede = stockSedeService.obtenerCantidad(p.getIdProducto(), idSedeRestriccion);
-            p.setStockTotal(stockEnSuSede);
-        }
-        return productos;
     }
 }

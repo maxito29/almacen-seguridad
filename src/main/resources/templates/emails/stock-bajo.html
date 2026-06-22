@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="margin:0; padding:0; background:#f4f4f7; font-family: Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:30px 0;">
+        <table width="540" style="background:#ffffff; border-radius:10px; overflow:hidden;">
+          <tr>
+            <td style="background:#1a1a2e; padding:20px; text-align:center;">
+              <h2 style="color:#f0a500; margin:0;">⚠ Alerta de Stock Bajo</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px;">
+              <p>Hola <strong th:text="${nombre}">Usuario</strong>,</p>
+              <p>Los siguientes productos tienen stock bajo o crítico:</p>
+              <table style="width:100%; border-collapse:collapse; margin:15px 0;">
+                <tr style="background:#1a1a2e; color:#fff;">
+                  <th style="padding:8px; text-align:left;">Producto</th>
+                  <th style="padding:8px; text-align:left;">Sede</th>
+                  <th style="padding:8px; text-align:right;">Stock</th>
+                </tr>
+                <tr th:each="item : ${items}"
+                    th:style="${item.cantidad == 0} ? 'background:#fde8e8;' : 'background:#fff8e6;'">
+                  <td style="padding:8px;" th:text="${item.producto.descripcion}">Producto</td>
+                  <td style="padding:8px;" th:text="${item.sede.nombre}">Sede</td>
+                  <td style="padding:8px; text-align:right; font-weight:bold;" th:text="${item.cantidad}">0</td>
+                </tr>
+              </table>
+              <p style="color:#888; font-size:13px;">
+                Revisa el sistema para programar un nuevo ingreso si es necesario.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
