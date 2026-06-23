@@ -693,4 +693,12 @@ html, body {
     100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
 }
 
+.usuario-topbar i.bi-chevron-down {
+    transition: transform 0.2s ease;
+}
+
+.usuario-topbar[aria-expanded="true"] i.bi-chevron-down {
+    transform: rotate(180deg);
+}
+
 

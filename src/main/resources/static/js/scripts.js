@@ -2278,6 +2278,10 @@ function dispararAlertaStock() {
                     timer: data.success ? 2000 : undefined,
                     showConfirmButton: !data.success
                 });
+				
+				if (data.success) {
+				    setTimeout(() => cargarContador(), 500);
+				}
             })
             .catch(() => {
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
@@ -2298,6 +2302,16 @@ document.addEventListener('click', function(e) {
     }
 });
 
+document.addEventListener('click', function(e) {
+    const panel   = document.getElementById('chat-panel');
+    const wrapper = document.getElementById('chat-wrapper');
+    if (panel && wrapper && 
+        !panel.contains(e.target) && 
+        !wrapper.contains(e.target)) {
+        panel.style.display = 'none';
+    }
+});
+
 function toggleNotifPanel() {
     const panel = document.getElementById('notif-panel');
     if (!panel) return;
@@ -2305,7 +2319,10 @@ function toggleNotifPanel() {
     if (!visible) {
         panel.style.display = 'block';
         cargarListaNotificaciones();
-        marcarTodasLeidas();
+        setTimeout(() => {
+            marcarTodasLeidas();
+            cargarContador();
+        }, 2000);
     } else {
         panel.style.display = 'none';
     }
