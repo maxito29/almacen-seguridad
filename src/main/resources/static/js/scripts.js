@@ -1424,6 +1424,8 @@ function autocompletarRucProveedor(select) {
 
 //CHAT IA 
 
+let historialChat = []
+
 function toggleChatIA() {
     const panel = document.getElementById('panelChatIA');
     panel.classList.toggle('activo');
@@ -1443,6 +1445,8 @@ function enviarMensajeChat() {
     const pregunta = input.value.trim();
 
     if (!pregunta) return;
+
+    historialChat.push({ role: 'user', content: pregunta });
 
     const mensajes = document.getElementById('chatMensajes');
     const divUsuario = document.createElement('div');
@@ -1469,16 +1473,19 @@ function enviarMensajeChat() {
     fetch('/api/chat/preguntar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pregunta: pregunta })
+        body: JSON.stringify({ pregunta: pregunta, historial: historialChat.slice(-6) })
     })
     .then(res => res.json())
     .then(data => {
         document.getElementById('chatLoading')?.remove();
 
+        const respuesta = data.respuesta || data.error || 'No pude procesar tu solicitud.';
+        
+        historialChat.push({ role: 'assistant', content: respuesta });
+
         const divBot = document.createElement('div');
         divBot.className = 'chat-mensaje chat-mensaje-bot';
-        divBot.textContent = data.respuesta || data.error
-            || 'No pude procesar tu solicitud.';
+        divBot.textContent = respuesta;
         mensajes.appendChild(divBot);
 
         mensajes.scrollTop = mensajes.scrollHeight;
@@ -1491,8 +1498,7 @@ function enviarMensajeChat() {
 
         const divError = document.createElement('div');
         divError.className = 'chat-mensaje chat-mensaje-bot';
-        divError.textContent =
-            'Error de conexión. Intenta nuevamente.';
+        divError.textContent = 'Error de conexión. Intenta nuevamente.';
         mensajes.appendChild(divError);
 
         mensajes.scrollTop = mensajes.scrollHeight;

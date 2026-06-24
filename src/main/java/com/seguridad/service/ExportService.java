@@ -7,6 +7,10 @@ import com.seguridad.model.Ingreso;
 import com.seguridad.model.Producto;
 import com.seguridad.repository.IngresoRepository;
 import com.seguridad.repository.ProductoRepository;
+import com.seguridad.repository.ProveedorRepository;
+import com.seguridad.repository.SalidaRepository;
+import com.seguridad.repository.TrabajadorRepository;
+
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
@@ -478,5 +482,491 @@ public class ExportService {
 
 		doc.close();
 		return out.toByteArray();
+	}
+	
+	// ══════════════════════════════════════════════════════════
+	// EXCEL — SALIDAS
+	// ══════════════════════════════════════════════════════════
+	@Autowired SalidaRepository salidaRepo;
+	@Autowired TrabajadorRepository trabajadorRepo;
+	@Autowired ProveedorRepository proveedorRepo;
+
+	public byte[] exportarSalidasExcel() throws Exception {
+	    List<com.seguridad.model.Salida> salidas = salidaRepo.findAll();
+	    XSSFWorkbook wb = new XSSFWorkbook();
+	    XSSFSheet sheet = wb.createSheet("Salidas");
+
+	    XSSFCellStyle estiloTitulo = wb.createCellStyle();
+	    XSSFFont fuenteTitulo = wb.createFont();
+	    fuenteTitulo.setBold(true);
+	    fuenteTitulo.setFontHeightInPoints((short) 14);
+	    fuenteTitulo.setColor(IndexedColors.WHITE.getIndex());
+	    estiloTitulo.setFont(fuenteTitulo);
+	    estiloTitulo.setFillForegroundColor(new XSSFColor(new byte[]{(byte)26,(byte)26,(byte)46}, null));
+	    estiloTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloTitulo.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloHeader = wb.createCellStyle();
+	    XSSFFont fuenteHeader = wb.createFont();
+	    fuenteHeader.setBold(true);
+	    fuenteHeader.setColor(IndexedColors.WHITE.getIndex());
+	    estiloHeader.setFont(fuenteHeader);
+	    estiloHeader.setFillForegroundColor(new XSSFColor(new byte[]{(byte)220,(byte)53,(byte)69}, null));
+	    estiloHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloHeader.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloFila = wb.createCellStyle();
+	    estiloFila.setBorderBottom(BorderStyle.THIN);
+
+	    XSSFCellStyle estiloFilaAlt = wb.createCellStyle();
+	    estiloFilaAlt.cloneStyleFrom(estiloFila);
+	    estiloFilaAlt.setFillForegroundColor(new XSSFColor(new byte[]{(byte)248,(byte)249,(byte)250}, null));
+	    estiloFilaAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+	    Row rowTitulo = sheet.createRow(0);
+	    rowTitulo.setHeightInPoints(28);
+	    Cell cellTitulo = rowTitulo.createCell(0);
+	    cellTitulo.setCellValue("REPORTE DE SALIDAS — SISTEMA ALMACÉN");
+	    cellTitulo.setCellStyle(estiloTitulo);
+	    sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
+
+	    Row rowFecha = sheet.createRow(1);
+	    rowFecha.createCell(0).setCellValue("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+	    sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 7));
+
+	    String[] headers = {"#", "Producto", "Código", "Sede",
+	                        "Trabajador", "Cantidad", "Costo Unit.", "Fecha"};
+	    Row rowHeader = sheet.createRow(3);
+	    rowHeader.setHeightInPoints(20);
+	    for (int i = 0; i < headers.length; i++) {
+	        Cell cell = rowHeader.createCell(i);
+	        cell.setCellValue(headers[i]);
+	        cell.setCellStyle(estiloHeader);
+	    }
+
+	    int rowNum = 4;
+	    for (com.seguridad.model.Salida s : salidas) {
+	        Row row = sheet.createRow(rowNum);
+	        XSSFCellStyle estilo = rowNum % 2 == 0 ? estiloFilaAlt : estiloFila;
+	        row.createCell(0).setCellValue(s.getIdSalida());
+	        row.createCell(1).setCellValue(s.getProducto().getDescripcion());
+	        row.createCell(2).setCellValue(s.getProducto().getIdProducto());
+	        row.createCell(3).setCellValue(s.getSede().getNombre());
+	        row.createCell(4).setCellValue(s.getTrabajador() != null
+	            ? s.getTrabajador().getNombreCompleto() : "-");
+	        row.createCell(5).setCellValue(s.getCantidad());
+	        row.createCell(6).setCellValue(s.getProducto().getCostoUnitario() != null
+	            ? s.getProducto().getCostoUnitario().doubleValue() : 0);
+	        row.createCell(7).setCellValue(s.getFecha() != null
+	            ? new SimpleDateFormat("dd/MM/yyyy").format(s.getFecha()) : "-");
+	        for (int i = 0; i <= 7; i++) row.getCell(i).setCellStyle(estilo);
+	        rowNum++;
+	    }
+
+	    int[] anchos = {1500, 8000, 3000, 5000, 6000, 2500, 3500, 3500};
+	    for (int i = 0; i < anchos.length; i++) sheet.setColumnWidth(i, anchos[i]);
+
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    wb.write(out); wb.close();
+	    return out.toByteArray();
+	}
+
+	// ══════════════════════════════════════════════════════════
+	// PDF — SALIDAS
+	// ══════════════════════════════════════════════════════════
+	public byte[] exportarSalidasPdf() throws Exception {
+	    List<com.seguridad.model.Salida> salidas = salidaRepo.findAll();
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    Document doc = new Document(PageSize.A4.rotate());
+	    PdfWriter.getInstance(doc, out);
+	    doc.open();
+
+	    Font fuenteTitulo = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteHeader = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteNormal = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.DARK_GRAY);
+	    Font fuenteSub    = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, BaseColor.GRAY);
+	    Font fuentePie    = new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC, BaseColor.GRAY);
+
+	    BaseColor colorOscuro   = new BaseColor(26, 26, 46);
+	    BaseColor colorRojo     = new BaseColor(220, 53, 69);
+	    BaseColor colorGrisClaro = new BaseColor(248, 249, 250);
+
+	    PdfPTable tablaTitulo = new PdfPTable(1);
+	    tablaTitulo.setWidthPercentage(100);
+	    PdfPCell celdaTitulo = new PdfPCell(
+	        new Phrase("REPORTE DE SALIDAS — SISTEMA ALMACÉN", fuenteTitulo));
+	    celdaTitulo.setBackgroundColor(colorRojo);
+	    celdaTitulo.setPadding(12);
+	    celdaTitulo.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    celdaTitulo.setBorder(Rectangle.NO_BORDER);
+	    tablaTitulo.addCell(celdaTitulo);
+	    doc.add(tablaTitulo);
+
+	    Paragraph fecha = new Paragraph("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()), fuenteSub);
+	    fecha.setAlignment(Element.ALIGN_RIGHT);
+	    fecha.setSpacingBefore(4); fecha.setSpacingAfter(12);
+	    doc.add(fecha);
+
+	    PdfPTable tabla = new PdfPTable(7);
+	    tabla.setWidthPercentage(100);
+	    tabla.setWidths(new float[]{1f, 3f, 1.5f, 2f, 2.5f, 1f, 1.5f});
+
+	    String[] headers = {"#", "Producto", "Código", "Sede", "Trabajador", "Cant.", "Costo"};
+	    for (String h : headers) {
+	        PdfPCell cell = new PdfPCell(new Phrase(h, fuenteHeader));
+	        cell.setBackgroundColor(colorOscuro);
+	        cell.setPadding(7);
+	        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	        tabla.addCell(cell);
+	    }
+
+	    boolean alterno = false;
+	    for (com.seguridad.model.Salida s : salidas) {
+	        BaseColor colorFila = alterno ? colorGrisClaro : BaseColor.WHITE;
+	        alterno = !alterno;
+	        String[] vals = {
+	        	    String.valueOf(s.getIdSalida()),
+	        	    s.getProducto().getDescripcion(),
+	        	    s.getProducto().getIdProducto(),
+	        	    s.getSede().getNombre(),
+	        	    s.getTrabajador() != null ? s.getTrabajador().getNombreCompleto() : "-",
+	        	    String.valueOf(s.getCantidad()),
+	        	    "S/ " + String.format("%.2f", s.getProducto().getCostoUnitario() != null  
+	        	        ? s.getProducto().getCostoUnitario() : 0)
+	        	};
+	        for (int i = 0; i < vals.length; i++) {
+	            PdfPCell cell = new PdfPCell(new Phrase(vals[i], fuenteNormal));
+	            cell.setBackgroundColor(colorFila);
+	            cell.setPadding(5);
+	            cell.setHorizontalAlignment(i >= 5 ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
+	            cell.setBorderColor(new BaseColor(220, 220, 220));
+	            tabla.addCell(cell);
+	        }
+	    }
+	    doc.add(tabla);
+
+	    Paragraph pie = new Paragraph(
+	        "Sistema de Gestión de Almacén — Empresa de Seguridad Privada", fuentePie);
+	    pie.setAlignment(Element.ALIGN_CENTER);
+	    pie.setSpacingBefore(20);
+	    doc.add(pie);
+	    doc.close();
+	    return out.toByteArray();
+	}
+
+	// ══════════════════════════════════════════════════════════
+	// EXCEL — TRABAJADORES
+	// ══════════════════════════════════════════════════════════
+	public byte[] exportarTrabajadoresExcel() throws Exception {
+	    List<com.seguridad.model.Trabajador> trabajadores = trabajadorRepo.findAll();
+	    XSSFWorkbook wb = new XSSFWorkbook();
+	    XSSFSheet sheet = wb.createSheet("Trabajadores");
+
+	    XSSFCellStyle estiloTitulo = wb.createCellStyle();
+	    XSSFFont fuenteTitulo = wb.createFont();
+	    fuenteTitulo.setBold(true); fuenteTitulo.setFontHeightInPoints((short) 14);
+	    fuenteTitulo.setColor(IndexedColors.WHITE.getIndex());
+	    estiloTitulo.setFont(fuenteTitulo);
+	    estiloTitulo.setFillForegroundColor(new XSSFColor(new byte[]{(byte)26,(byte)26,(byte)46}, null));
+	    estiloTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloTitulo.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloHeader = wb.createCellStyle();
+	    XSSFFont fuenteHeader = wb.createFont();
+	    fuenteHeader.setBold(true); fuenteHeader.setColor(IndexedColors.WHITE.getIndex());
+	    estiloHeader.setFont(fuenteHeader);
+	    estiloHeader.setFillForegroundColor(new XSSFColor(new byte[]{(byte)13,(byte)110,(byte)253}, null));
+	    estiloHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloHeader.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloFila = wb.createCellStyle();
+	    XSSFCellStyle estiloFilaAlt = wb.createCellStyle();
+	    estiloFilaAlt.setFillForegroundColor(new XSSFColor(new byte[]{(byte)248,(byte)249,(byte)250}, null));
+	    estiloFilaAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+	    Row rowTitulo = sheet.createRow(0);
+	    rowTitulo.setHeightInPoints(28);
+	    Cell ct = rowTitulo.createCell(0);
+	    ct.setCellValue("REPORTE DE TRABAJADORES — SISTEMA ALMACÉN");
+	    ct.setCellStyle(estiloTitulo);
+	    sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
+
+	    Row rowFecha = sheet.createRow(1);
+	    rowFecha.createCell(0).setCellValue("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+	    sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 6));
+
+	    String[] headers = {"ID", "Nombre Completo", "DNI", "Puesto", "Cliente", "Sede", "Estado"};
+	    Row rowHeader = sheet.createRow(3);
+	    for (int i = 0; i < headers.length; i++) {
+	        Cell cell = rowHeader.createCell(i);
+	        cell.setCellValue(headers[i]);
+	        cell.setCellStyle(estiloHeader);
+	    }
+
+	    int rowNum = 4;
+	    for (com.seguridad.model.Trabajador t : trabajadores) {
+	        Row row = sheet.createRow(rowNum);
+	        XSSFCellStyle estilo = rowNum % 2 == 0 ? estiloFilaAlt : estiloFila;
+	        row.createCell(0).setCellValue(t.getIdTrabajador());
+	        row.createCell(1).setCellValue(t.getNombreCompleto());
+	        row.createCell(2).setCellValue(t.getDocumentoIdentidad() != null ? t.getDocumentoIdentidad() : "-");
+	        row.createCell(3).setCellValue(t.getPuesto() != null ? t.getPuesto() : "-");
+	        row.createCell(4).setCellValue(t.getCliente() != null ? t.getCliente() : "-");
+	        row.createCell(5).setCellValue(t.getSede() != null ? t.getSede().getNombre() : "-");
+	        row.createCell(6).setCellValue(t.getActivoCesado() != null ? t.getActivoCesado() : "-");
+	        for (int i = 0; i <= 6; i++) row.getCell(i).setCellStyle(estilo);
+	        rowNum++;
+	    }
+
+	    int[] anchos = {1500, 8000, 3500, 4000, 5000, 5000, 3000};
+	    for (int i = 0; i < anchos.length; i++) sheet.setColumnWidth(i, anchos[i]);
+
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    wb.write(out); wb.close();
+	    return out.toByteArray();
+	}
+
+	// ══════════════════════════════════════════════════════════
+	// PDF — TRABAJADORES
+	// ══════════════════════════════════════════════════════════
+	public byte[] exportarTrabajadoresPdf() throws Exception {
+	    List<com.seguridad.model.Trabajador> trabajadores = trabajadorRepo.findAll();
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    Document doc = new Document(PageSize.A4.rotate());
+	    PdfWriter.getInstance(doc, out);
+	    doc.open();
+
+	    Font fuenteTitulo = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteHeader = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteNormal = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.DARK_GRAY);
+	    Font fuenteSub    = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, BaseColor.GRAY);
+	    Font fuentePie    = new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC, BaseColor.GRAY);
+
+	    BaseColor colorOscuro    = new BaseColor(26, 26, 46);
+	    BaseColor colorAzul      = new BaseColor(13, 110, 253);
+	    BaseColor colorGrisClaro = new BaseColor(248, 249, 250);
+
+	    PdfPTable tablaTitulo = new PdfPTable(1);
+	    tablaTitulo.setWidthPercentage(100);
+	    PdfPCell celdaTitulo = new PdfPCell(
+	        new Phrase("REPORTE DE TRABAJADORES — SISTEMA ALMACÉN", fuenteTitulo));
+	    celdaTitulo.setBackgroundColor(colorAzul);
+	    celdaTitulo.setPadding(12);
+	    celdaTitulo.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    celdaTitulo.setBorder(Rectangle.NO_BORDER);
+	    tablaTitulo.addCell(celdaTitulo);
+	    doc.add(tablaTitulo);
+
+	    Paragraph fecha = new Paragraph("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()), fuenteSub);
+	    fecha.setAlignment(Element.ALIGN_RIGHT);
+	    fecha.setSpacingBefore(4); fecha.setSpacingAfter(12);
+	    doc.add(fecha);
+
+	    PdfPTable tabla = new PdfPTable(7);
+	    tabla.setWidthPercentage(100);
+	    tabla.setWidths(new float[]{1f, 3.5f, 1.5f, 2f, 2.5f, 2f, 1.5f});
+
+	    String[] headers = {"ID", "Nombre", "DNI", "Puesto", "Cliente", "Sede", "Estado"};
+	    for (String h : headers) {
+	        PdfPCell cell = new PdfPCell(new Phrase(h, fuenteHeader));
+	        cell.setBackgroundColor(colorOscuro);
+	        cell.setPadding(7);
+	        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	        tabla.addCell(cell);
+	    }
+
+	    boolean alterno = false;
+	    for (com.seguridad.model.Trabajador t : trabajadores) {
+	        BaseColor colorFila = alterno ? colorGrisClaro : BaseColor.WHITE;
+	        alterno = !alterno;
+	        String estado = t.getActivoCesado() != null ? t.getActivoCesado() : "-";
+	        String[] vals = {
+	            String.valueOf(t.getIdTrabajador()),
+	            t.getNombreCompleto(),
+	            t.getDocumentoIdentidad() != null ? t.getDocumentoIdentidad() : "-",
+	            t.getPuesto() != null ? t.getPuesto() : "-",
+	            t.getCliente() != null ? t.getCliente() : "-",
+	            t.getSede() != null ? t.getSede().getNombre() : "-",
+	            estado
+	        };
+	        for (int i = 0; i < vals.length; i++) {
+	            PdfPCell cell = new PdfPCell(new Phrase(vals[i], fuenteNormal));
+	            if (i == 6) {
+	                cell.setBackgroundColor("ACTIVO".equals(estado)
+	                    ? new BaseColor(212, 237, 218) : new BaseColor(248, 215, 218));
+	            } else {
+	                cell.setBackgroundColor(colorFila);
+	            }
+	            cell.setPadding(5);
+	            cell.setBorderColor(new BaseColor(220, 220, 220));
+	            tabla.addCell(cell);
+	        }
+	    }
+	    doc.add(tabla);
+
+	    Paragraph pie = new Paragraph(
+	        "Sistema de Gestión de Almacén — Empresa de Seguridad Privada", fuentePie);
+	    pie.setAlignment(Element.ALIGN_CENTER); pie.setSpacingBefore(20);
+	    doc.add(pie);
+	    doc.close();
+	    return out.toByteArray();
+	}
+
+	// ══════════════════════════════════════════════════════════
+	// EXCEL — PROVEEDORES
+	// ══════════════════════════════════════════════════════════
+	public byte[] exportarProveedoresExcel() throws Exception {
+	    List<com.seguridad.model.Proveedor> proveedores = proveedorRepo.findAll();
+	    XSSFWorkbook wb = new XSSFWorkbook();
+	    XSSFSheet sheet = wb.createSheet("Proveedores");
+
+	    XSSFCellStyle estiloTitulo = wb.createCellStyle();
+	    XSSFFont fuenteTitulo = wb.createFont();
+	    fuenteTitulo.setBold(true); fuenteTitulo.setFontHeightInPoints((short) 14);
+	    fuenteTitulo.setColor(IndexedColors.WHITE.getIndex());
+	    estiloTitulo.setFont(fuenteTitulo);
+	    estiloTitulo.setFillForegroundColor(new XSSFColor(new byte[]{(byte)26,(byte)26,(byte)46}, null));
+	    estiloTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloTitulo.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloHeader = wb.createCellStyle();
+	    XSSFFont fuenteHeader = wb.createFont();
+	    fuenteHeader.setBold(true); fuenteHeader.setColor(IndexedColors.WHITE.getIndex());
+	    estiloHeader.setFont(fuenteHeader);
+	    estiloHeader.setFillForegroundColor(new XSSFColor(new byte[]{(byte)25,(byte)135,(byte)84}, null));
+	    estiloHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	    estiloHeader.setAlignment(HorizontalAlignment.CENTER);
+
+	    XSSFCellStyle estiloFila = wb.createCellStyle();
+	    XSSFCellStyle estiloFilaAlt = wb.createCellStyle();
+	    estiloFilaAlt.setFillForegroundColor(new XSSFColor(new byte[]{(byte)248,(byte)249,(byte)250}, null));
+	    estiloFilaAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+	    Row rowTitulo = sheet.createRow(0);
+	    rowTitulo.setHeightInPoints(28);
+	    Cell ct = rowTitulo.createCell(0);
+	    ct.setCellValue("REPORTE DE PROVEEDORES — SISTEMA ALMACÉN");
+	    ct.setCellStyle(estiloTitulo);
+	    sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
+
+	    Row rowFecha = sheet.createRow(1);
+	    rowFecha.createCell(0).setCellValue("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+	    sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 6));
+
+	    String[] headers = {"ID", "Nombre", "RUC", "Dirección", "Tipo", "Estado SUNAT", "Estado"};
+	    Row rowHeader = sheet.createRow(3);
+	    for (int i = 0; i < headers.length; i++) {
+	        Cell cell = rowHeader.createCell(i);
+	        cell.setCellValue(headers[i]);
+	        cell.setCellStyle(estiloHeader);
+	    }
+
+	    int rowNum = 4;
+	    for (com.seguridad.model.Proveedor p : proveedores) {
+	        Row row = sheet.createRow(rowNum);
+	        XSSFCellStyle estilo = rowNum % 2 == 0 ? estiloFilaAlt : estiloFila;
+	        row.createCell(0).setCellValue(p.getIdProveedor());
+	        row.createCell(1).setCellValue(p.getNombre());
+	        row.createCell(2).setCellValue(p.getRuc() != null ? p.getRuc() : "-");
+	        row.createCell(3).setCellValue(p.getDireccion() != null ? p.getDireccion() : "-");
+	        row.createCell(4).setCellValue(p.getTipo() != null ? p.getTipo() : "-");
+	        row.createCell(5).setCellValue(p.getEstadoSunat() != null ? p.getEstadoSunat() : "-");
+	        row.createCell(6).setCellValue(p.getEstado() == 1 ? "Activo" : "Suspendido");
+	        for (int i = 0; i <= 6; i++) row.getCell(i).setCellStyle(estilo);
+	        rowNum++;
+	    }
+
+	    int[] anchos = {1500, 8000, 3500, 7000, 4000, 4000, 3000};
+	    for (int i = 0; i < anchos.length; i++) sheet.setColumnWidth(i, anchos[i]);
+
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    wb.write(out); wb.close();
+	    return out.toByteArray();
+	}
+
+	// ══════════════════════════════════════════════════════════
+	// PDF — PROVEEDORES
+	// ══════════════════════════════════════════════════════════
+	public byte[] exportarProveedoresPdf() throws Exception {
+	    List<com.seguridad.model.Proveedor> proveedores = proveedorRepo.findAll();
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    Document doc = new Document(PageSize.A4.rotate());
+	    PdfWriter.getInstance(doc, out);
+	    doc.open();
+
+	    Font fuenteTitulo = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteHeader = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+	    Font fuenteNormal = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL, BaseColor.DARK_GRAY);
+	    Font fuenteSub    = new Font(Font.FontFamily.HELVETICA, 9, Font.ITALIC, BaseColor.GRAY);
+	    Font fuentePie    = new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC, BaseColor.GRAY);
+
+	    BaseColor colorOscuro    = new BaseColor(26, 26, 46);
+	    BaseColor colorVerde     = new BaseColor(25, 135, 84);
+	    BaseColor colorGrisClaro = new BaseColor(248, 249, 250);
+
+	    PdfPTable tablaTitulo = new PdfPTable(1);
+	    tablaTitulo.setWidthPercentage(100);
+	    PdfPCell celdaTitulo = new PdfPCell(
+	        new Phrase("REPORTE DE PROVEEDORES — SISTEMA ALMACÉN", fuenteTitulo));
+	    celdaTitulo.setBackgroundColor(colorVerde);
+	    celdaTitulo.setPadding(12);
+	    celdaTitulo.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    celdaTitulo.setBorder(Rectangle.NO_BORDER);
+	    tablaTitulo.addCell(celdaTitulo);
+	    doc.add(tablaTitulo);
+
+	    Paragraph fecha = new Paragraph("Generado: " +
+	        new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()), fuenteSub);
+	    fecha.setAlignment(Element.ALIGN_RIGHT);
+	    fecha.setSpacingBefore(4); fecha.setSpacingAfter(12);
+	    doc.add(fecha);
+
+	    PdfPTable tabla = new PdfPTable(7);
+	    tabla.setWidthPercentage(100);
+	    tabla.setWidths(new float[]{1f, 3f, 1.5f, 3f, 1.5f, 1.5f, 1.5f});
+
+	    String[] headers = {"ID", "Nombre", "RUC", "Dirección", "Tipo", "SUNAT", "Estado"};
+	    for (String h : headers) {
+	        PdfPCell cell = new PdfPCell(new Phrase(h, fuenteHeader));
+	        cell.setBackgroundColor(colorOscuro);
+	        cell.setPadding(7);
+	        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	        tabla.addCell(cell);
+	    }
+
+	    boolean alterno = false;
+	    for (com.seguridad.model.Proveedor p : proveedores) {
+	        BaseColor colorFila = alterno ? colorGrisClaro : BaseColor.WHITE;
+	        alterno = !alterno;
+	        String[] vals = {
+	            String.valueOf(p.getIdProveedor()),
+	            p.getNombre(),
+	            p.getRuc() != null ? p.getRuc() : "-",
+	            p.getDireccion() != null ? p.getDireccion() : "-",
+	            p.getTipo() != null ? p.getTipo() : "-",
+	            p.getEstadoSunat() != null ? p.getEstadoSunat() : "-",
+	            p.getEstado() == 1 ? "Activo" : "Suspendido"
+	        };
+	        for (String v : vals) {
+	            PdfPCell cell = new PdfPCell(new Phrase(v, fuenteNormal));
+	            cell.setBackgroundColor(colorFila);
+	            cell.setPadding(5);
+	            cell.setBorderColor(new BaseColor(220, 220, 220));
+	            tabla.addCell(cell);
+	        }
+	    }
+	    doc.add(tabla);
+
+	    Paragraph pie = new Paragraph(
+	        "Sistema de Gestión de Almacén — Empresa de Seguridad Privada", fuentePie);
+	    pie.setAlignment(Element.ALIGN_CENTER); pie.setSpacingBefore(20);
+	    doc.add(pie);
+	    doc.close();
+	    return out.toByteArray();
 	}
 }
