@@ -2411,3 +2411,192 @@ function marcarTodasLeidas() {
 cargarContador();
 setInterval(cargarContador, 30000);
 
+
+// SALIDAS
+function irPaginaSalidas(pagina) {
+    const url = '/salidas?page=' + pagina;
+    history.pushState({ url }, '', url);
+    fetch('/salidas/lista/json?page=' + pagina)
+    .then(res => res.json())
+    .then(data => renderizarTablaSalidas(data, pagina));
+}
+
+function recargarTablaSalidas() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+    irPaginaSalidas(paginaActual);
+}
+
+function renderizarTablaSalidas(data, pagina) {
+    const tbody = document.querySelector('#tablaSalidas tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!data.salidas || data.salidas.length === 0) {
+        tbody.innerHTML = `<tr>
+            <td colspan="9" class="text-center text-muted py-4">
+                No hay salidas registradas
+            </td></tr>`;
+        return;
+    }
+
+    const offset = pagina * 10;
+    data.salidas.forEach((s, idx) => {
+        const estadoBadge = s.estado === 1
+            ? '<span class="badge bg-success">Activo</span>'
+            : '<span class="badge bg-secondary">Suspendido</span>';
+
+        const btnEstado = s.estado === 1
+            ? `<a href="javascript:void(0)"
+                  data-url="/salidas/estado/${s.idSalida}"
+                  data-estado="${s.estado}"
+                  class="btn btn-danger btn-sm"
+                  onclick="confirmarEstadoSalida(this.dataset.url, this.dataset.estado)">
+                  <i class="bi bi-pause-circle"></i></a>`
+            : `<a href="javascript:void(0)"
+                  data-url="/salidas/estado/${s.idSalida}"
+                  data-estado="${s.estado}"
+                  class="btn btn-success btn-sm"
+                  onclick="confirmarEstadoSalida(this.dataset.url, this.dataset.estado)">
+                  <i class="bi bi-play-circle"></i></a>`;
+
+        const fecha = s.fecha
+            ? new Date(s.fecha).toLocaleDateString('es-PE') : '-';
+
+        tbody.innerHTML += `
+        <tr class="${s.estado === 2 ? 'table-secondary' : ''}">
+            <td>${s.idSalida}</td>
+            <td>
+                <span class="fw-semibold">${s.producto.descripcion}</span>
+                <br/><small class="text-muted">${s.producto.idProducto}</small>
+            </td>
+            <td>${s.trabajador ? s.trabajador.nombreCompleto : '-'}</td>
+            <td><span class="badge bg-dark">${s.sede.nombre}</span></td>
+            <td><span class="badge bg-success">${s.cantidad}</span></td>
+            <td>${fecha}</td>
+            <td><small>${s.observacion || '-'}</small></td>
+            <td>${estadoBadge}</td>
+            <td>
+                <div class="acciones-btn">
+                    <button class="btn btn-warning btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalSalida"
+                        data-id="${s.idSalida}"
+                        data-producto="${s.producto.idProducto}"
+                        data-trabajador="${s.trabajador ? s.trabajador.idTrabajador : ''}"
+                        data-sede="${s.sede.idSede}"
+                        data-cantidad="${s.cantidad}"
+                        data-observacion="${s.observacion || ''}"
+                        data-estado="${s.estado}"
+                        onclick="editarSalida(this)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${btnEstado}
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    actualizarPaginacion(pagina, data.totalPages, data.totalElements, data.salidas.length);
+    renderPaginacion(document.querySelector('.pagination'), pagina, data.totalPages, 'irPaginaSalidas');
+}
+
+function confirmarEstadoSalida(url, estadoActual) {
+    const esActivo = estadoActual == 1;
+    const id = url.split('/').filter(x => !isNaN(x) && x !== '').pop();
+    Swal.fire({
+        title: esActivo ? '¿Suspender registro?' : '¿Activar registro?',
+        icon: esActivo ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: esActivo ? '#dc3545' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esActivo ? 'Sí, suspender' : 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch('/salidas/estado/ajax/' + id, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: 'Actualizado',
+                        text: data.mensaje, timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => recargarTablaSalidas());
+                }
+            });
+        }
+    });
+}
+
+function filtrarTablaSalidasLocal() {
+    const texto  = document.getElementById('buscador')?.value || '';
+    const estado = document.getElementById('filtroEstado')?.value || '';
+    filtrarSalidasServidor(estado, 0, texto);
+}
+
+function filtrarSalidasServidor(estado, pagina, buscar = '') {
+    fetch(`/salidas/lista/json?page=${pagina}&estado=${estado}&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+        renderizarTablaSalidas(data, pagina);
+
+        renderPaginacion(
+            document.querySelector('.pagination'),
+            pagina, data.totalPages,
+            `(p) => filtrarSalidasServidor('${estado}', p, '${buscar}')`
+        );
+    });
+}
+
+function guardarSalida(event) {
+    event.preventDefault();
+    const form = document.getElementById('formSalida');
+    const formData = new FormData(form);
+    const esNuevo = !document.getElementById('idSalida').value;
+
+    fetch('/salidas/guardar/ajax', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(
+                document.getElementById('modalSalida')).hide();
+            Swal.fire({
+                icon: 'success', title: '¡Guardado!',
+                text: data.mensaje, timer: 2000,
+                showConfirmButton: false
+            }).then(() => recargarTablaSalidas());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.mensaje });
+        }
+    })
+    .catch(() => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión' });
+    });
+}
+
+function limpiarModalSalida() {
+    document.getElementById('tituloModal').innerHTML =
+        '<i class="bi bi-arrow-up-circle me-2"></i>Nueva Salida';
+    ['idSalida','selectProducto','selectTrabajador',
+     'selectSede','inputCantidad','inputObservacion'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+function editarSalida(btn) {
+    const d = btn.dataset;
+    document.getElementById('tituloModal').innerHTML =
+        '<i class="bi bi-pencil me-2"></i>Editar Salida #' + d.id;
+    document.getElementById('idSalida').value          = d.id;
+    document.getElementById('inputEstado').value       = d.estado;
+    document.getElementById('selectProducto').value    = d.producto;
+    document.getElementById('selectTrabajador').value  = d.trabajador;
+    document.getElementById('selectSede').value        = d.sede;
+    document.getElementById('inputCantidad').value     = d.cantidad;
+    document.getElementById('inputObservacion').value  = d.observacion || '';
+}
