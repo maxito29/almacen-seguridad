@@ -1985,7 +1985,8 @@ function limpiarModalUsuario() {
     document.getElementById('tituloModalUsuario').innerHTML =
         '<i class="bi bi-person-gear me-2"></i>Nuevo Usuario';
     ['idUsuario','inputUsername','inputNombreUsuario',
-     'inputPasswordUsuario','inputEstadoUsuario'].forEach(id => {
+     'inputPasswordUsuario','inputEstadoUsuario',
+     'inputEmailUsuario'].forEach(id => {   
         const el = document.getElementById(id);
         if (el) el.value = '';
     });

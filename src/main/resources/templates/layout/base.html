@@ -147,7 +147,6 @@
 		            <span th:text="${#dates.format(#dates.createNow(),'dd/MM/yyyy')}"></span>
 		        </span>
 				
-				<!-- ICONO DE CHAT -->
 				<div class="position-relative" style="cursor:pointer;" 
 				     id="chat-wrapper" onclick="toggleChatPanel()">
 				    <i class="bi bi-chat-dots-fill" style="font-size:1.3rem; color:#6c757d;"></i>
@@ -185,7 +184,6 @@
 				                       border-bottom:2px solid transparent;">Directos</button>
 				    </div>
 
-				    <!-- Vista Grupal -->
 				    <div id="chatVistaGrupal">
 				        <div id="chat-mensajes-grupal" style="height:340px; overflow-y:auto; padding:10px;"></div>
 				        <div style="display:flex; gap:6px; padding:10px; border-top:1px solid #eee;">
@@ -198,10 +196,7 @@
 				        </div>
 				    </div>
 
-				    <!-- Vista lista de contactos -->
 				    <div id="chatVistaContactos" style="display:none; height:420px; overflow-y:auto;"></div>
-
-				    <!-- Vista conversacion directa -->
 				    <div id="chatVistaDirecto" style="display:none;">
 				        <div style="padding:8px 12px; border-bottom:1px solid #eee;
 				                    display:flex; align-items:center; gap:8px;">
@@ -221,6 +216,7 @@
 				        </div>
 				    </div>
 				</div>
+
 
 		        <!--CAMPANA DE NOTIFICACIONES -->
 		        <div class="position-relative" style="cursor:pointer;" 
