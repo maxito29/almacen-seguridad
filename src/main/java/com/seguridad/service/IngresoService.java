@@ -15,6 +15,8 @@ public class IngresoService {
     @Autowired ProductoRepository productoRepo;
     @Autowired KardexRepository kardexRepo;
     @Autowired StockSedeService stockSedeService;
+    @Autowired NotificacionService notificacionService; 
+    @Autowired UsuarioRepository usuarioRepo;  
 
     public Page<Ingreso> listar(int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size);
@@ -25,35 +27,44 @@ public class IngresoService {
     public void guardar(Ingreso ingreso) {
         ingreso.setTotal(ingreso.getCantidad() * ingreso.getCostoUnitario());
         ingreso.setFecha(new Date());
-        if (ingreso.getIdIngreso() == null) {
-            ingreso.setEstado(1);
-        }
+          
+        boolean esNuevo = ingreso.getIdIngreso() == null; 
+        if (esNuevo) ingreso.setEstado(1);
+            
         ingresoRepo.save(ingreso);
 
-        Producto p = productoRepo.findById(
-            ingreso.getProducto().getIdProducto()).get();
+        Producto p = productoRepo.findById(ingreso.getProducto().getIdProducto()).get();
         p.setCostoUnitario(ingreso.getCostoUnitario());
         p.setStockTotal(p.getStockTotal() + ingreso.getCantidad());
         productoRepo.save(p);
+
+        if (esNuevo) {
+            notificacionService.notificarAdmins(
+                "📦 Nuevo Ingreso",
+                "Nuevo ingreso en " + ingreso.getSede().getNombre()
+                    + " — " + ingreso.getCantidad()
+                    + " unidades de " + p.getDescripcion(), 
+                "INGRESO"
+            );
+        }
+
         stockSedeService.sumar(p, ingreso.getSede(), ingreso.getCantidad());
         int saldoAnterior = kardexRepo
             .findUltimoSaldo(p.getIdProducto(), ingreso.getSede().getIdSede())
             .orElse(0);
         Kardex k = new Kardex();
-        k.setProducto(p);
-        k.setSede(ingreso.getSede());
-        k.setTipoMov("E");
-        k.setFecha(new Date());
+        k.setProducto(p); k.setSede(ingreso.getSede());
+        k.setTipoMov("E"); k.setFecha(new Date());
         k.setCantidad(ingreso.getCantidad());
         k.setCostoUnit(ingreso.getCostoUnitario());
         k.setTotal(ingreso.getTotal());
         k.setSaldoCant(saldoAnterior + ingreso.getCantidad());
-        k.setSaldoValor((saldoAnterior + ingreso.getCantidad())
-            * ingreso.getCostoUnitario());
+        k.setSaldoValor((saldoAnterior + ingreso.getCantidad()) * ingreso.getCostoUnitario());
         k.setReferencia("ING-" + ingreso.getIdIngreso());
         k.setObservacion(ingreso.getNroFactura());
         kardexRepo.save(k);
     }
+
 
     public void cambiarEstado(Integer id) {
         Ingreso i = ingresoRepo.findById(id).get();

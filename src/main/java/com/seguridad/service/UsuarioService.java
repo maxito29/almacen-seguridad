@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 public class UsuarioService {
 
     @Autowired UsuarioRepository usuarioRepo;
+    @Autowired NotificacionService notificacionService;
 
     public Page<Usuario> listar(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("idUsuario").ascending());
@@ -44,6 +45,14 @@ public class UsuarioService {
             }
         }
         usuarioRepo.save(usuario);
+        
+        if (esNuevo) {
+            notificacionService.notificarAdmins(
+                "👤 Nuevo Usuario",
+                "Nuevo usuario registrado: " + usuario.getUsername(),
+                "USUARIO"
+            );
+        }
     }
 
     public void cambiarEstado(Integer id) {

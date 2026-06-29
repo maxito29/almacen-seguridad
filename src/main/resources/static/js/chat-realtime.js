@@ -3,6 +3,7 @@ let chatContactoActualId = null;
 let chatGrupalCargado = false;
 let lastDiaGrupal = null;
 let lastDiaDirecto = null;
+let chatPanelAbierto = false;
 
 function conectarChat() {
     const socket = new SockJS('/ws-chat');
@@ -29,9 +30,16 @@ function toggleChatPanel() {
     const panel = document.getElementById('chat-panel');
     const visible = panel.style.display === 'block';
     panel.style.display = visible ? 'none' : 'block';
-    if (!visible && !chatGrupalCargado) {
-        cargarHistorialGrupal();
-        chatGrupalCargado = true;
+    chatPanelAbierto = !visible;
+
+    if (!visible) {
+        if (!chatGrupalCargado) {
+            cargarHistorialGrupal();
+            chatGrupalCargado = true;
+        }
+        fetch('/api/chat/grupal/marcar-leido', { method: 'POST' })
+            .then(() => actualizarContadorChat())
+            .catch(() => {});
     }
 }
 
@@ -89,6 +97,10 @@ function pintarMensajeGrupal(m) {
         <div style="font-size:0.65rem; color:#bbb; margin-top:2px;">${formatHoraChat(m.fecha)}</div>`;
     cont.appendChild(div);
     cont.scrollTop = cont.scrollHeight;
+
+    if (!chatPanelAbierto && !esMio) {
+        actualizarContadorChat();
+    }
 }
 
 function enviarMensajeGrupal() {
@@ -198,14 +210,20 @@ function manejarMensajeDirectoEntrante(m) {
 }
 
 function actualizarContadorChat() {
-    fetch('/api/chat/contactos')
-    .then(res => res.json())
-    .then(lista => {
-        const total = lista.reduce((acc, c) => acc + (c.noLeidos || 0), 0);
+    Promise.all([
+        fetch('/api/chat/contactos').then(r => r.json()),
+        fetch('/api/chat/grupal/no-leidos').then(r => r.json())
+    ])
+    .then(([contactos, grupal]) => {
+        const totalDirectos = contactos.reduce((acc, c) => acc + (c.noLeidos || 0), 0);
+        const totalGrupales = chatPanelAbierto ? 0 : (grupal.noLeidos || 0);
+        const total = totalDirectos + totalGrupales;
+
         const badge = document.getElementById('chat-badge');
         document.getElementById('chat-count').textContent = total;
         badge.style.display = total > 0 ? 'block' : 'none';
-    });
+    })
+    .catch(() => {});
 }
 
 function formatHoraChat(fechaStr) {

@@ -1,17 +1,21 @@
 package com.seguridad.controller;
 
 import com.seguridad.dto.MensajeDTO;
+import com.seguridad.model.ChatGrupalLectura;
 import com.seguridad.model.Mensaje;
 import com.seguridad.model.Usuario;
+import com.seguridad.repository.ChatGrupalLecturaRepository;
 import com.seguridad.repository.MensajeRepository;
 import com.seguridad.repository.UsuarioRepository;
 import com.seguridad.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,4 +71,31 @@ public class ChatHistorialController {
         dto.setFecha(m.getFecha());
         return dto;
     }
+    
+    @Autowired ChatGrupalLecturaRepository lecturaRepo;
+
+ @GetMapping("/grupal/no-leidos")
+ public Map<String, Object> contarGrupalesNoLeidos(Authentication auth) {
+     Usuario yo = ((CustomUserDetails) auth.getPrincipal()).getUsuario();
+
+     LocalDateTime desde = lecturaRepo.findById(yo.getIdUsuario())
+         .map(ChatGrupalLectura::getUltimaLectura)
+         .orElse(LocalDateTime.now().minusMinutes(10)); 
+
+     long total = mensajeRepo.contarGrupalesDesde(yo.getIdUsuario(), desde);
+     return Map.of("noLeidos", total);
+ }
+
+ @PostMapping("/grupal/marcar-leido")
+ public ResponseEntity<Void> marcarGrupalLeido(Authentication auth) {
+     Usuario yo = ((CustomUserDetails) auth.getPrincipal()).getUsuario();
+
+     ChatGrupalLectura lectura = lecturaRepo.findById(yo.getIdUsuario())
+         .orElse(new ChatGrupalLectura());
+     lectura.setIdUsuario(yo.getIdUsuario());
+     lectura.setUltimaLectura(LocalDateTime.now());
+     lecturaRepo.save(lectura);
+
+     return ResponseEntity.ok().build();
+ }
 }

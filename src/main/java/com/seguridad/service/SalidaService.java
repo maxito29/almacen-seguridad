@@ -10,11 +10,11 @@ import java.util.Date;
 
 @Service
 public class SalidaService {
-
     @Autowired SalidaRepository salidaRepo;
     @Autowired ProductoRepository productoRepo;
     @Autowired KardexRepository kardexRepo;
     @Autowired StockSedeService stockSedeService;
+    @Autowired NotificacionService notificacionService; 
 
     public Page<Salida> listar(int page, int size, Integer idSedeRestriccion) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("idSalida").descending());
@@ -29,18 +29,32 @@ public class SalidaService {
             salida.setEstado(1);
         }
         salidaRepo.save(salida);
+
         if (esNueva) {
+            notificacionService.notificarAdmins(
+                "📤 Nueva Salida",
+                "Salida registrada en " + salida.getSede().getNombre()
+                    + " — " + salida.getProducto().getDescripcion(),
+                "SALIDA"
+            );
+
             Producto p = productoRepo.findById(
                 salida.getProducto().getIdProducto()).get();
             p.setStockTotal(p.getStockTotal() - salida.getCantidad());
             productoRepo.save(p);
-
             stockSedeService.restar(p, salida.getSede(), salida.getCantidad());
+            if (p.getStockTotal() <= 0) {
+                String titulo  = "🚨 Stock Crítico";
+                String mensaje = "CRÍTICO: " + p.getDescripcion()
+                    + " sin stock en " + salida.getSede().getNombre();
+                notificacionService.notificarAlmacenDeSede(
+                    salida.getSede().getIdSede(), titulo, mensaje, "STOCK_CRITICO");
+                notificacionService.notificarAdmins(titulo, mensaje, "STOCK_CRITICO");
+            }
 
             int saldoAnterior = kardexRepo
                 .findUltimoSaldo(p.getIdProducto(), salida.getSede().getIdSede())
                 .orElse(0);
-
             Kardex k = new Kardex();
             k.setProducto(p);
             k.setSede(salida.getSede());

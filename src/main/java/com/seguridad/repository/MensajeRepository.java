@@ -29,4 +29,10 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
            "AND m.emisor.idUsuario = :idEmisor AND m.leido = false")
     void marcarConversacionLeida(@Param("idDestinatario") Integer idDestinatario,
                                   @Param("idEmisor") Integer idEmisor);
+    
+    @Query("SELECT COUNT(m) FROM Mensaje m WHERE m.destinatario IS NULL " +
+           "AND m.emisor.idUsuario <> :idUsuario " +
+           "AND m.fecha > :desde")
+    long contarGrupalesDesde(@Param("idUsuario") Integer idUsuario,
+                              @Param("desde") java.time.LocalDateTime desde);
 }

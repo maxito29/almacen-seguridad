@@ -8,16 +8,18 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ProductoService {
-
     @Autowired ProductoRepository productoRepo;
+    @Autowired NotificacionService notificacionService; 
 
     public Page<Producto> listar(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size,
-            Sort.by("idProducto").ascending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("idProducto").ascending());
         return productoRepo.findAll(pageable);
     }
 
     public void guardar(Producto producto) {
+        boolean esNuevo = producto.getIdProducto() == null
+            || !productoRepo.existsById(producto.getIdProducto()); 
+
         if (producto.getEstado() == null) {
             producto.setEstado(1);
         }
@@ -25,6 +27,14 @@ public class ProductoService {
             producto.setStockTotal(0);
         }
         productoRepo.save(producto);
+
+        if (esNuevo) {
+            notificacionService.notificarTodos(
+                "🆕 Nuevo Producto",
+                "Se agregó el producto: " + producto.getDescripcion(),
+                "PRODUCTO"
+            );
+        }
     }
 
     public void cambiarEstado(String id) {
@@ -40,19 +50,17 @@ public class ProductoService {
                 texto, texto, pageable);
     }
 
-    public Page<Producto> buscarConFiltro(String texto, int estado,
-                                           int page, int size) {
+    public Page<Producto> buscarConFiltro(String texto, int estado, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return productoRepo
-            .findByEstadoAndDescripcionContainingIgnoreCase(
-                estado, texto, pageable);
+            .findByEstadoAndDescripcionContainingIgnoreCase(estado, texto, pageable);
     }
 
     public Page<Producto> listarPorEstado(int estado, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return productoRepo.findByEstado(estado, pageable);
     }
-    
+
     public boolean existe(String id) {
         return productoRepo.existsById(id);
     }
