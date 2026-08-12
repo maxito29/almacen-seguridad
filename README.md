@@ -137,8 +137,11 @@ Acceder en: `http://localhost:8080`
 
 ## 👨‍💻 Autor
 
-**Maximiliano López**  
-Estudiante de Desarrollo de Software — CIBERTEC  
+**Maximiliano López Avalos**  
+**Lionel Lara Candela**
+**Angeles Escalante Vargas**
+**Jefferson Ucharima Parian**
+Estudiantes de Computación e Informática — CIBERTEC  
 [github.com/maxito29](https://github.com/maxito29)
 
 ---
